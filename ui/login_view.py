@@ -1,9 +1,10 @@
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QLabel,
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QLineEdit, QPushButton, QSpacerItem, QSizePolicy,
 )
 from PySide6.QtCore import Qt, Signal, QSize
 from PySide6.QtGui import QPixmap
+import qtawesome as qta
 from services.logo_service import get_dev_logo_path
 from services.empresa_service import empresa_service
 
@@ -14,7 +15,8 @@ class LoginView(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Agilize Gestion")
-        self.setFixedSize(440, 520)
+        self.setFixedSize(440, 540)
+        self._pass_visible = False
         self._build_ui()
 
     def _build_ui(self):
@@ -25,13 +27,20 @@ class LoginView(QWidget):
 
         # Logo
         icon_label = QLabel()
-        pixmap = QPixmap(get_dev_logo_path()).scaled(QSize(64, 64), Qt.KeepAspectRatio, Qt.SmoothTransformation)
-        icon_label.setPixmap(pixmap)
+        try:
+            pixmap = QPixmap(get_dev_logo_path()).scaled(QSize(64, 64), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            icon_label.setPixmap(pixmap)
+        except Exception:
+            pass
         icon_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(icon_label)
 
         # Titulo
-        title = QLabel(empresa_service.obtener("dev_nombre") or "Agilize")
+        try:
+            nombre = empresa_service.obtener("dev_nombre") or "Agilize"
+        except Exception:
+            nombre = "Agilize"
+        title = QLabel(nombre)
         title.setObjectName("title")
         title.setAlignment(Qt.AlignCenter)
         layout.addWidget(title)
@@ -51,12 +60,26 @@ class LoginView(QWidget):
 
         layout.addSpacerItem(QSpacerItem(0, 6, QSizePolicy.Minimum, QSizePolicy.Fixed))
 
-        # Password
+        # Password con ojo
+        pass_row = QHBoxLayout()
+        pass_row.setSpacing(0)
+
         self.input_pass = QLineEdit()
         self.input_pass.setPlaceholderText("Contrasena")
         self.input_pass.setEchoMode(QLineEdit.Password)
         self.input_pass.setMinimumHeight(40)
-        layout.addWidget(self.input_pass)
+        pass_row.addWidget(self.input_pass)
+
+        self.btn_eye = QPushButton()
+        self.btn_eye.setFixedSize(40, 40)
+        self.btn_eye.setCursor(Qt.PointingHandCursor)
+        self.btn_eye.setIcon(qta.icon("fa5s.eye-slash", color="#888888"))
+        self.btn_eye.setIconSize(QSize(18, 18))
+        self.btn_eye.setStyleSheet("QPushButton { background-color: transparent; border: none; } QPushButton:hover { background-color: #2a2a2a; border-radius: 20px; }")
+        self.btn_eye.clicked.connect(self._toggle_password)
+        pass_row.addWidget(self.btn_eye)
+
+        layout.addLayout(pass_row)
 
         # Error
         self.lbl_error = QLabel("")
@@ -86,6 +109,15 @@ class LoginView(QWidget):
         self.input_pass.returnPressed.connect(self._on_login)
         self.input_user.returnPressed.connect(lambda: self.input_pass.setFocus())
 
+    def _toggle_password(self):
+        self._pass_visible = not self._pass_visible
+        if self._pass_visible:
+            self.input_pass.setEchoMode(QLineEdit.Normal)
+            self.btn_eye.setIcon(qta.icon("fa5s.eye", color="#D4AF37"))
+        else:
+            self.input_pass.setEchoMode(QLineEdit.Password)
+            self.btn_eye.setIcon(qta.icon("fa5s.eye-slash", color="#888888"))
+
     def _on_login(self):
         username = self.input_user.text().strip()
         password = self.input_pass.text()
@@ -94,14 +126,17 @@ class LoginView(QWidget):
             self._show_error("Completa usuario y contrasena")
             return
 
-        from services.auth_service import auth_service
-        success, msg = auth_service.login(username, password)
+        try:
+            from services.auth_service import auth_service
+            success, msg = auth_service.login(username, password)
 
-        if success:
-            self.lbl_error.hide()
-            self.login_success.emit()
-        else:
-            self._show_error(msg)
+            if success:
+                self.lbl_error.hide()
+                self.login_success.emit()
+            else:
+                self._show_error(msg)
+        except Exception as e:
+            self._show_error(f"Error de conexion: {str(e)[:50]}")
 
     def _show_error(self, msg: str):
         self.lbl_error.setText(msg)

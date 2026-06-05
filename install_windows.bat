@@ -138,12 +138,12 @@ if %errorlevel% equ 0 (
 :: Crear acceso directo en escritorio
 echo.
 echo Creando acceso directo en escritorio...
-set SHORTCUT=%USERPROFILE%\Desktop\Agilize Gestion.lnk
-powershell -Command "$ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut('%SHORTCUT%'); $s.TargetPath = '%INSTALL_DIR%\venv\Scripts\pythonw.exe'; $s.Arguments = 'main.py'; $s.WorkingDirectory = '%INSTALL_DIR%'; $s.Save()" >nul 2>&1
-if exist "%SHORTCUT%" (
+cscript //nologo "%INSTALL_DIR%\scripts\create_shortcut.vbs"
+if exist "%USERPROFILE%\Desktop\Agilize Gestion.lnk" (
     echo [OK] Acceso directo creado en el escritorio.
 ) else (
-    echo [INFO] No se pudo crear el acceso directo. Ejecuta manualmente.
+    echo [INFO] No se pudo crear el acceso directo. Ejecuta manualmente:
+    echo        %INSTALL_DIR%\venv\Scripts\pythonw.exe main.py
 )
 
 echo.
