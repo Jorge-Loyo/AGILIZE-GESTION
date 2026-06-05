@@ -2,12 +2,13 @@ from sqlalchemy import or_
 from sqlalchemy.orm import joinedload
 from core.database import get_db
 from models.empleado import Empleado, Departamento, Cargo
+from models.sucursal import Sucursal
 
 
 class EmpleadoService:
     def listar(self, busqueda: str = "", solo_activos: bool = True) -> list[Empleado]:
         with get_db() as db:
-            query = db.query(Empleado).options(joinedload(Empleado.departamento), joinedload(Empleado.cargo))
+            query = db.query(Empleado).options(joinedload(Empleado.departamento), joinedload(Empleado.cargo), joinedload(Empleado.sucursal))
             if solo_activos:
                 query = query.filter(Empleado.activo == True)
             if busqueda:
@@ -26,7 +27,7 @@ class EmpleadoService:
         with get_db() as db:
             return (
                 db.query(Empleado)
-                .options(joinedload(Empleado.departamento), joinedload(Empleado.cargo))
+                .options(joinedload(Empleado.departamento), joinedload(Empleado.cargo), joinedload(Empleado.sucursal))
                 .get(empleado_id)
             )
 

@@ -43,9 +43,11 @@ class Empleado(Base, TimestampMixin):
     fecha_egreso: Mapped[date | None] = mapped_column(Date, nullable=True)
     departamento_id: Mapped[int | None] = mapped_column(ForeignKey("departamentos.id"), nullable=True)
     cargo_id: Mapped[int | None] = mapped_column(ForeignKey("cargos.id"), nullable=True)
+    sucursal_id: Mapped[int | None] = mapped_column(ForeignKey("sucursales.id"), nullable=True)
     activo: Mapped[bool] = mapped_column(Boolean, default=True)
     horas_jornada: Mapped[Decimal] = mapped_column(Numeric(4, 2), default=Decimal("8"))
     valor_hora: Mapped[Decimal] = mapped_column(Numeric(10, 2), default=Decimal("0"))
+    valor_hora_extra: Mapped[Decimal] = mapped_column(Numeric(10, 2), default=Decimal("0"))
     sueldo_mensual: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("0"))
     dias_laborales: Mapped[str] = mapped_column(String(50), default="lun,mar,mie,jue,vie")  # dias separados por coma
     hora_entrada: Mapped[str] = mapped_column(String(5), default="08:00")
@@ -54,3 +56,4 @@ class Empleado(Base, TimestampMixin):
 
     departamento = relationship("Departamento", back_populates="empleados")
     cargo = relationship("Cargo", back_populates="empleados")
+    sucursal = relationship("Sucursal", back_populates="empleados")

@@ -32,10 +32,7 @@ class NominaService:
             return query.order_by(Liquidacion.fecha_liquidacion.desc()).all()
 
     def liquidar(self, empleado_id: int, periodo: str, sueldo_basico: Decimal, conceptos_ids: list[int]) -> Liquidacion:
-        # Validar cierre de asistencia
         from services.cierre_service import cierre_service
-        if not cierre_service.asistencia_cerrada(periodo):
-            raise ValueError(f"La asistencia del período {periodo} no está cerrada. Cerrala antes de liquidar.")
 
         # Validar que no esté ya liquidado
         if cierre_service.liquidacion_cerrada(empleado_id, periodo):

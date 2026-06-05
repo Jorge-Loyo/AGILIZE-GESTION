@@ -2,210 +2,169 @@
 
 ## Sistema Empresarial de Gestión Integral
 
-**Versión:** 1.0  
+**Versión:** 1.2.0  
 **Fecha de inicio:** Junio 2025  
 **País/Legislación:** Argentina  
-**Usuarios iniciales:** 5 (escalable a 10+ en el próximo año)
+**Usuarios iniciales:** 5 (escalable a 10+)
 
 ---
 
-## 1. Visión del Producto
-
-Sistema de escritorio modular para gestión empresarial, comenzando por Empleados y Nómina, con arquitectura preparada para incorporar módulos futuros (Inventario, Facturación, Contabilidad, etc.) sin refactorización mayor.
+## Estado del Proyecto: EN PRODUCCIÓN
 
 ---
 
-## 2. Stack Tecnológico
+## Módulos Implementados
 
-| Capa | Tecnología | Justificación |
-|------|-----------|---------------|
-| UI Desktop | PySide6 | LGPL, profesional, soporte QSS para theming |
-| Theming | qt-material + QSS custom | Tema oscuro/claro moderno, no genérico |
-| Base de Datos | PostgreSQL 18 | Concurrencia, robustez, escalabilidad |
-| ORM | SQLAlchemy 2.0 | Mapeo de modelos, independencia de BD |
-| Migraciones | Alembic | Versionado de esquema de BD |
-| Hash/Seguridad | bcrypt | Hash de contraseñas seguro |
-| Configuración | python-dotenv | Variables de entorno sin hardcodeo |
-| Logging | logging (stdlib) | Trazabilidad de operaciones |
-| Reportes (futuro) | reportlab / openpyxl | PDF y Excel |
+### 1. RRHH (Recursos Humanos)
 
----
+#### Dashboard
+- Métricas en tiempo real: empleados activos, horas del mes, liquidaciones, adelantos, gasto nómina
 
-## 3. Arquitectura
+#### Empleados
+- CRUD completo con validaciones (DNI, CUIL, email, edad mínima 17)
+- Legajo único por empleado
+- Jornada configurable: hora entrada/salida, días laborales, valor hora, valor hora extra
+- Sueldo mensual con cálculo automático bidireccional (hora↔mensual)
+- Departamentos, Cargos y Sucursales
+- Importación masiva desde Excel (flexible: soporta nombre completo, legajo numérico)
+- Exportación a Excel
+- Plantilla descargable
+- Detalle en modal, ordenamiento por legajo/nombre/apellido
+- Baja lógica (no elimina datos)
 
-```
-Patrón: MVC + Servicios + RBAC Granular
+#### Asistencia
+- Importación de fichadas desde XLS (reloj fichador) y XLSX (manual)
+- Vinculación por legajo (No)
+- Detección de registros incompletos (entrada sin salida) con alerta
+- Registro manual con validación de duplicados por día
+- Edición de registros en modal
+- Eliminación de registros
+- Normalización de hora de entrada al horario configurado
+- Filtros: empleado, período, estado (todos/incompletos/completos), ordenamiento
+- Contador de registros
+- Vista Calendario por empleado (presente verde, ausente rojo, incompleto amarillo)
+- Exportación a Excel
+- Permisos / Licencias (tipos configurables, con/sin goce, días máx)
+- Ausencias (justificadas/injustificadas)
 
-UI (Views/PySide6)
-    ↕ señales/slots
-Controllers (por módulo)
-    ↕
-Services (lógica de negocio pura)
-    ↕
-Models (SQLAlchemy) → PostgreSQL
-```
+#### Cierres
+- Cierre por quincena con rango de fechas flexible (el usuario decide cuándo)
+- Validación de solapamiento entre cierres
+- No permite cerrar si hay registros incompletos
+- Editar y eliminar cierres
+- Reabrir con alerta si hay liquidaciones
 
-### Principios:
-- **Modularidad**: Cada módulo es independiente (carpeta propia con controller + views).
-- **Separación de responsabilidades**: La UI nunca accede directo a la BD.
-- **RBAC granular**: Permisos por perfil Y por usuario individual (override).
-- **Auditoría**: Todo cambio queda registrado (quién, qué, cuándo).
+#### Nómina
+- **Liquidaciones**: Cálculo desde asistencia real (horas normales, extras, sábado, domingo, feriado)
+- Valor hora extra independiente por empleado
+- Multiplicadores configurables (extra, sábado, domingo, feriado)
+- Conceptos de nómina: porcentaje sobre bruto, monto fijo, monto por día trabajado
+- Edición de conceptos
+- Descuento automático de adelantos (por cuotas)
+- Combo de períodos cerrados para liquidar
+- Empleados pendientes por período
+- Verificar estado del período
+- Detalle del recibo en tiempo real con desglose completo
+- Recibo PDF profesional (datos empresa, empleado, asistencia, conceptos, totales, firmas)
+- Filtros: año, mes, empleado
+- Exportación a Excel
+- **Resumen Mensual**: Vista consolidada con todos los empleados, días, horas, bruto, estado
+- **Adelantos**: Con cuotas fraccionadas, info de horas trabajadas y saldo
+- **SAC (Aguinaldo)**: Cálculo por método legal o promedio, acumulación automática
 
----
+#### Configuración RRHH
+- Valor hora extra (multiplicadores)
+- Método SAC
+- Conceptos de nómina (crear, editar, 3 tipos de cálculo)
+- Tipos de permiso/licencia
 
-## 4. Sistema de Permisos (RBAC + Override por Usuario)
+### 2. Configuración (Global)
 
-```
-┌─────────┐     ┌──────────┐     ┌──────────────┐
-│ Usuario │────→│   Rol    │────→│ Rol_Permiso  │
-└─────────┘     └──────────┘     └──────────────┘
-     │                                    │
-     │          ┌──────────────────┐      │
-     └─────────→│ Usuario_Permiso  │      │
-                │ (override)       │      │
-                └──────────────────┘      │
-                                          ↓
-                                   ┌──────────┐
-                                   │ Permiso  │
-                                   │ (módulo + │
-                                   │  acción)  │
-                                   └──────────┘
-```
+#### Datos de Empresa
+- Razón social, CUIT, dirección, teléfono, actividad, convenio colectivo
+- Sucursales (crear, listar)
 
-**Acciones por módulo:** `ver`, `crear`, `editar`, `eliminar`, `exportar`
+#### Visual
+- Nombre comercial (sobrenombre)
+- Logo de la empresa
 
-**Lógica de resolución:**
-1. Se consultan permisos del ROL del usuario.
-2. Se consultan overrides del USUARIO (pueden agregar o quitar permisos).
-3. El override del usuario siempre gana sobre el rol.
+#### Desarrollador
+- Datos del desarrollador (nombre, email, web, teléfono)
+- Logo del desarrollador (icono de la app)
+- Botón resetear aplicación (limpia datos operativos)
 
----
+#### Usuarios
+- CRUD de usuarios con roles
+- Activar/desactivar
+- Crear roles
 
-## 5. Diseño de Base de Datos (Fase 1)
+#### Auditoría
+- Log de acciones: login, crear, editar, eliminar, liquidar, cierres
 
-### Tablas Core:
-
-| Tabla | Descripción |
-|-------|-------------|
-| `usuarios` | Credenciales, estado activo/inactivo, FK a rol |
-| `roles` | Nombre, descripción |
-| `modulos` | Registro de módulos del sistema |
-| `permisos` | Módulo + acción (ej: "empleados.crear") |
-| `rol_permisos` | Qué permisos tiene cada rol |
-| `usuario_permisos` | Override: permisos extra o denegados por usuario |
-| `audit_log` | Usuario, acción, tabla afectada, timestamp, detalle |
-| `empresa_config` | Datos de la empresa, configuraciones globales |
-
-### Tablas Módulo Empleados:
-
-| Tabla | Descripción |
-|-------|-------------|
-| `empleados` | Datos personales, laborales, estado |
-| `departamentos` | Áreas de la empresa |
-| `cargos` | Puestos de trabajo |
-| `documentos_empleado` | Archivos adjuntos (contratos, etc.) |
-
-### Tablas Módulo Nómina (Fase posterior):
-
-| Tabla | Descripción |
-|-------|-------------|
-| `conceptos_nomina` | Haberes y deducciones configurables |
-| `liquidaciones` | Cabecera del recibo |
-| `liquidacion_detalle` | Líneas del recibo |
-| `periodos_liquidacion` | Meses cerrados |
+#### Actualizar
+- Conecta al repositorio Git (Deploy-Ferrelum)
+- Verifica actualizaciones disponibles
+- Descarga y aplica cambios
 
 ---
 
-## 6. Interfaz Visual
+## Stack Tecnológico
 
-- **Tema dual**: Oscuro y Claro, switcheable desde configuración.
-- **Librería de estilo**: `qt-material` como base + QSS personalizado.
-- **Sidebar dinámica**: Se genera según permisos del usuario logueado.
-- **Componentes reutilizables**: Tablas con búsqueda/filtro, formularios con validación visual, notificaciones toast.
-- **Paleta de colores** (tema oscuro): Fondo #1e1e2e, Acento #7c3aed (violeta), Éxito #10b981, Error #ef4444.
-
----
-
-## 7. Hitos de Desarrollo
-
-### Hito 0 — Cimientos ✅ (Actual)
-- [x] Estructura de carpetas
-- [x] Configuración del entorno (requirements.txt, .env, .gitignore)
-- [x] Conexión a PostgreSQL con SQLAlchemy
-- [x] Configuración de Alembic
-- [x] Documento de plan de acción
-
-### Hito 1 — Modelos de BD Core
-- [ ] Modelos: usuarios, roles, permisos, módulos, audit_log
-- [ ] Migración inicial con Alembic
-- [ ] Script seed: crear admin, roles base, permisos iniciales
-- [ ] Tests de conexión y queries básicas
-
-### Hito 2 — Autenticación y Login
-- [ ] Servicio de autenticación (hash, verificación, sesión)
-- [ ] Resolución de permisos (rol + override usuario)
-- [ ] UI: Pantalla de Login (PySide6 + tema moderno)
-- [ ] Validación funcional del login contra BD
-
-### Hito 3 — Ventana Principal + Navegación Dinámica
-- [ ] Main Window con sidebar generada por permisos
-- [ ] Switch tema oscuro/claro
-- [ ] Sistema de navegación entre módulos
-- [ ] Componente reutilizable: DataTable
-- [ ] Logging de acciones del usuario
-
-### Hito 4 — Módulo Empleados
-- [ ] CRUD completo de empleados
-- [ ] Gestión de departamentos y cargos
-- [ ] Búsqueda y filtros avanzados
-- [ ] Validaciones (CUIL, formato datos)
-- [ ] Auditoría de cambios
-
-### Hito 5 — Módulo Nómina
-- [ ] Configuración de conceptos (haberes/deducciones)
-- [ ] Cálculo de liquidación según legislación Argentina
-- [ ] Generación de recibos
-- [ ] Historial de liquidaciones
-- [ ] Exportación a PDF
-
-### Hito 6 — Administración y Reportes
-- [ ] ABM de usuarios y roles desde la UI
-- [ ] Panel de asignación de permisos (visual)
-- [ ] Reportes exportables (PDF/Excel)
-- [ ] Dashboard con métricas básicas
+| Capa | Tecnología |
+|------|-----------|
+| UI Desktop | PySide6 + QSS custom + qtawesome |
+| Base de Datos | PostgreSQL 18 (portable incluido) |
+| ORM | SQLAlchemy 2.0 |
+| Migraciones | Alembic (auto-migración al iniciar) |
+| Hash/Seguridad | bcrypt |
+| Configuración | python-dotenv |
+| Logging | loguru |
+| Reportes | reportlab (PDF) + openpyxl (Excel) |
+| Iconos | qtawesome (Font Awesome) |
+| Build | PyInstaller |
+| Distribución | GitHub Releases |
 
 ---
 
-## 8. Convenciones de Código
+## Infraestructura
 
-- **Idioma del código**: Inglés para nombres de variables/funciones, Español para strings de UI.
-- **Formato**: PEP 8, máximo 100 caracteres por línea.
-- **Commits**: Convencional (feat:, fix:, refactor:, docs:).
-- **Docstrings**: En funciones públicas de servicios y controllers.
-
----
-
-## 9. Seguridad
-
-- Contraseñas hasheadas con bcrypt (nunca texto plano).
-- Variables sensibles en .env (nunca en el código).
-- Sesión con timeout configurable.
-- Audit log de toda acción CRUD.
-- Prepared statements via SQLAlchemy (prevención SQL injection).
+- Tema oscuro/claro con paleta de marca (dorado #D4AF37)
+- Logo y nombre configurable desde BD
+- Instalador gráfico (tkinter)
+- PostgreSQL portable embebido
+- Auto-migración de BD al iniciar
+- Acceso directo en escritorio
+- Soporte red local (servidor + clientes)
+- Actualización desde repositorio Git
 
 ---
 
-## 10. Próximos Módulos (Roadmap Futuro)
+## Credenciales por defecto
 
-| Prioridad | Módulo | Dependencia |
-|-----------|--------|-------------|
-| Alta | Inventario | - |
-| Alta | Facturación (AFIP) | Empleados |
-| Media | Contabilidad | Nómina, Facturación |
-| Media | Proveedores | - |
-| Baja | CRM / Clientes | Facturación |
-| Baja | Reportes BI | Todos |
+- Usuario: `master`
+- Password: `master2025`
 
 ---
 
-*Documento vivo — se actualizará a medida que avance el desarrollo.*
+## Repositorio
+
+- URL: https://github.com/Jorge-Loyo/AGILIZE-GESTION.git
+- Rama desarrollo: `main`
+- Rama deploy: `Deploy-Ferrelum`
+
+---
+
+## Roadmap Futuro
+
+| Prioridad | Módulo | Estado |
+|-----------|--------|--------|
+| Alta | Inventario | Pendiente |
+| Alta | Facturación (AFIP) | Pendiente |
+| Media | Contabilidad | Pendiente |
+| Media | Proveedores | Pendiente |
+| Baja | CRM / Clientes | Pendiente |
+| Baja | Reportes BI | Pendiente |
+
+---
+
+*Documento actualizado: Junio 2026*

@@ -134,6 +134,11 @@ class FormEmpleado(QWidget):
         self.combo_cargo.setMinimumHeight(32)
         form2.addWidget(self.combo_cargo, 1, 1)
 
+        form2.addWidget(QLabel("Sucursal"), 1, 2)
+        self.combo_sucursal = QComboBox()
+        self.combo_sucursal.setMinimumHeight(32)
+        form2.addWidget(self.combo_sucursal, 1, 3)
+
         content_layout.addWidget(grp_laboral)
 
         # === Jornada y Remuneración ===
@@ -203,6 +208,16 @@ class FormEmpleado(QWidget):
         form3.addWidget(self.input_sueldo_mensual, 2, 3)
 
         self.lbl_calculo = QLabel("")
+        self.lbl_calculo.setObjectName("subtitle")
+        form3.addWidget(self.lbl_calculo, 2, 4, 1, 2)
+
+        form3.addWidget(QLabel("Valor Hora Extra"), 3, 0)
+        self.input_valor_hora_extra = QDoubleSpinBox()
+        self.input_valor_hora_extra.setMinimumHeight(32)
+        self.input_valor_hora_extra.setRange(0, 999999)
+        self.input_valor_hora_extra.setDecimals(2)
+        self.input_valor_hora_extra.setPrefix("$ ")
+        form3.addWidget(self.input_valor_hora_extra, 3, 1)
         self.lbl_calculo.setObjectName("subtitle")
         form3.addWidget(self.lbl_calculo, 2, 4, 1, 2)
 
@@ -381,6 +396,10 @@ class FormEmpleado(QWidget):
             idx = self.combo_cargo.findData(emp.cargo_id)
             if idx >= 0:
                 self.combo_cargo.setCurrentIndex(idx)
+        if getattr(emp, 'sucursal_id', None):
+            idx = self.combo_sucursal.findData(emp.sucursal_id)
+            if idx >= 0:
+                self.combo_sucursal.setCurrentIndex(idx)
         if emp.hora_entrada:
             h, m = emp.hora_entrada.split(":")
             self.input_hora_entrada.setTime(QTime(int(h), int(m)))
@@ -392,6 +411,7 @@ class FormEmpleado(QWidget):
         for code, chk in self._dias_checks.items():
             chk.setChecked(code in dias)
         self.input_valor_hora.setValue(float(emp.valor_hora) if emp.valor_hora else 0.0)
+        self.input_valor_hora_extra.setValue(float(emp.valor_hora_extra) if getattr(emp, "valor_hora_extra", None) else 0.0)
         self.input_sueldo_mensual.setValue(float(emp.sueldo_mensual) if emp.sueldo_mensual else 0.0)
         self.input_obs.setPlainText(emp.observaciones or "")
         self._calculando = False
@@ -422,8 +442,10 @@ class FormEmpleado(QWidget):
             "fecha_ingreso": self.input_fecha_ingreso.date().toPython(),
             "departamento_id": self.combo_depto.currentData(),
             "cargo_id": self.combo_cargo.currentData(),
+            "sucursal_id": self.combo_sucursal.currentData(),
             "horas_jornada": self.input_horas_jornada.value(),
             "valor_hora": self.input_valor_hora.value(),
+            "valor_hora_extra": self.input_valor_hora_extra.value(),
             "sueldo_mensual": self.input_sueldo_mensual.value(),
             "hora_entrada": self.input_hora_entrada.time().toString("HH:mm"),
             "hora_salida": self.input_hora_salida.time().toString("HH:mm"),

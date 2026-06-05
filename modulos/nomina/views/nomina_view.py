@@ -8,6 +8,7 @@ from datetime import date
 from modulos.nomina.views.liquidar_view import LiquidarView
 from modulos.nomina.views.adelantos_view import AdelantosView
 from modulos.nomina.views.sac_view import SACView
+from modulos.nomina.views.resumen_mensual_view import ResumenMensualView
 from services.nomina_service import nomina_service
 from services.recibo_pdf_service import generar_recibo_pdf
 from services.export_service import exportar_excel
@@ -26,6 +27,7 @@ class NominaView(QWidget):
 
         tabs = QTabWidget()
         tabs.addTab(self._build_liquidaciones_tab(), "Liquidaciones")
+        tabs.addTab(ResumenMensualView(), "Resumen Mensual")
         tabs.addTab(AdelantosView(), "Adelantos")
         tabs.addTab(SACView(), "SAC (Aguinaldo)")
         layout.addWidget(tabs)

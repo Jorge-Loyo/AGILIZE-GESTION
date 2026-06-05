@@ -10,6 +10,8 @@ import shutil
 import qtawesome as qta
 from ui.theme_manager import theme_manager
 from services.empresa_service import empresa_service
+from core.database import get_db
+from models.sucursal import Sucursal
 from core.config import BASE_DIR
 
 
@@ -163,8 +165,72 @@ class ConfigGlobalView(QWidget):
         btn.setMinimumHeight(40)
         btn.clicked.connect(self._guardar_empresa)
         layout.addWidget(btn)
+
+        # Sucursales
+        grp_suc = QGroupBox("Sucursales")
+        grp_suc.setStyleSheet("QGroupBox { font-weight: bold; font-size: 13px; padding-top: 14px; margin-top: 6px; }")
+        suc_layout = QVBoxLayout(grp_suc)
+
+        suc_form = QHBoxLayout()
+        suc_form.setSpacing(8)
+        suc_form.addWidget(QLabel("Nombre:"))
+        self.input_suc_nombre = QLineEdit()
+        self.input_suc_nombre.setMinimumHeight(32)
+        self.input_suc_nombre.setPlaceholderText("Ej: Sucursal Centro")
+        suc_form.addWidget(self.input_suc_nombre)
+        suc_form.addWidget(QLabel("Direccion:"))
+        self.input_suc_dir = QLineEdit()
+        self.input_suc_dir.setMinimumHeight(32)
+        suc_form.addWidget(self.input_suc_dir)
+        btn_suc = QPushButton("Agregar")
+        btn_suc.setMinimumHeight(32)
+        btn_suc.clicked.connect(self._agregar_sucursal)
+        suc_form.addWidget(btn_suc)
+        suc_layout.addLayout(suc_form)
+
+        from PySide6.QtWidgets import QTableWidget, QTableWidgetItem, QHeaderView
+        self.tabla_sucursales = QTableWidget()
+        self.tabla_sucursales.setColumnCount(3)
+        self.tabla_sucursales.setHorizontalHeaderLabels(["Nombre", "Direccion", "Estado"])
+        self.tabla_sucursales.horizontalHeader().setStretchLastSection(True)
+        self.tabla_sucursales.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.tabla_sucursales.setAlternatingRowColors(True)
+        self.tabla_sucursales.verticalHeader().setVisible(False)
+        self.tabla_sucursales.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.tabla_sucursales.setMaximumHeight(150)
+        suc_layout.addWidget(self.tabla_sucursales)
+
+        layout.addWidget(grp_suc)
+        self._cargar_sucursales()
+
         layout.addStretch()
         return page
+
+    def _cargar_sucursales(self):
+        from PySide6.QtWidgets import QTableWidgetItem
+        with get_db() as db:
+            sucursales = db.query(Sucursal).order_by(Sucursal.nombre).all()
+            self.tabla_sucursales.setRowCount(len(sucursales))
+            for i, s in enumerate(sucursales):
+                self.tabla_sucursales.setItem(i, 0, QTableWidgetItem(s.nombre))
+                self.tabla_sucursales.setItem(i, 1, QTableWidgetItem(s.direccion or ""))
+                self.tabla_sucursales.setItem(i, 2, QTableWidgetItem("Activa" if s.activo else "Inactiva"))
+
+    def _agregar_sucursal(self):
+        nombre = self.input_suc_nombre.text().strip()
+        if not nombre:
+            QMessageBox.warning(self, "Error", "El nombre es obligatorio.")
+            return
+        direccion = self.input_suc_dir.text().strip()
+        try:
+            with get_db() as db:
+                db.add(Sucursal(nombre=nombre, direccion=direccion))
+            self.input_suc_nombre.clear()
+            self.input_suc_dir.clear()
+            self._cargar_sucursales()
+            QMessageBox.information(self, "OK", f"Sucursal '{nombre}' creada.")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", str(e))
 
     def _guardar_empresa(self):
         datos = {clave: inp.text().strip() for clave, inp in self._empresa_inputs.items()}

@@ -22,6 +22,7 @@ from models.cierre import CierreAsistencia, CierreLiquidacion  # noqa: F401
 from models.config_nomina import ConfigNomina  # noqa: F401
 from models.permiso_empleado import TipoPermiso, PermisoEmpleado, Ausencia  # noqa: F401
 from models.empresa import DatosEmpresa  # noqa: F401
+from models.sucursal import Sucursal  # noqa: F401
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)

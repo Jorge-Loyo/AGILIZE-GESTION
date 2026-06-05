@@ -29,6 +29,7 @@ class CalculoAsistenciaService:
                 return self._vacio()
 
             valor_hora = emp.valor_hora or Decimal("0")
+            valor_hora_extra = emp.valor_hora_extra if emp.valor_hora_extra else valor_hora
 
             registros = db.query(Asistencia).filter(
                 Asistencia.empleado_id == empleado_id,
@@ -54,10 +55,10 @@ class CalculoAsistenciaService:
                     hs_extra += r.horas_extra
 
         monto_normales = (hs_normales * valor_hora).quantize(Decimal("0.01"))
-        monto_extra = (hs_extra * valor_hora * mult_extra).quantize(Decimal("0.01"))
-        monto_sabado = (hs_sabado * valor_hora * mult_sabado).quantize(Decimal("0.01"))
-        monto_domingo = (hs_domingo * valor_hora * mult_domingo).quantize(Decimal("0.01"))
-        monto_feriado = (hs_feriado * valor_hora * mult_feriado).quantize(Decimal("0.01"))
+        monto_extra = (hs_extra * valor_hora_extra * mult_extra).quantize(Decimal("0.01"))
+        monto_sabado = (hs_sabado * valor_hora_extra * mult_sabado).quantize(Decimal("0.01"))
+        monto_domingo = (hs_domingo * valor_hora_extra * mult_domingo).quantize(Decimal("0.01"))
+        monto_feriado = (hs_feriado * valor_hora_extra * mult_feriado).quantize(Decimal("0.01"))
 
         bruto = monto_normales + monto_extra + monto_sabado + monto_domingo + monto_feriado
 

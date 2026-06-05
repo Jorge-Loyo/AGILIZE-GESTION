@@ -12,9 +12,8 @@ class AsistenciaService:
     def registrar(self, empleado_id: int, fecha: date, hora_entrada: time, hora_salida: time, incompleto: bool = False) -> Asistencia:
         # Validar cierre
         from services.cierre_service import cierre_service
-        periodo = fecha.strftime("%Y-%m")
-        if cierre_service.asistencia_cerrada(periodo):
-            raise ValueError(f"La asistencia del período {periodo} está cerrada. No se puede editar.")
+        if cierre_service.fecha_en_cierre(fecha):
+            raise ValueError(f"La fecha {fecha.strftime('%d/%m/%Y')} esta en un periodo cerrado. No se puede editar.")
 
         tipo_dia = self._determinar_tipo_dia(fecha)
         es_feriado = tipo_dia == TipoDia.FERIADO

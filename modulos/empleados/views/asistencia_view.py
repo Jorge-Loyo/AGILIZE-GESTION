@@ -92,6 +92,11 @@ class AsistenciaView(QWidget):
         filtros.addWidget(self.filtro_estado)
 
         filtros.addStretch()
+
+        self.lbl_contador = QLabel("")
+        self.lbl_contador.setStyleSheet("font-weight: bold; color: #D4AF37; font-size: 13px;")
+        filtros.addWidget(self.lbl_contador)
+
         layout.addLayout(filtros)
 
         # Tabla
@@ -135,6 +140,19 @@ class AsistenciaView(QWidget):
         btn_editar.setStyleSheet("QPushButton { background-color: #2D2D2D; color: #F8F9FA; } QPushButton:hover { background-color: #3d3d3d; }")
         btn_editar.clicked.connect(self._editar_seleccionado)
         bottom.addWidget(btn_editar)
+
+        btn_normalizar = QPushButton("  Normalizar Entrada")
+        btn_normalizar.setCursor(Qt.PointingHandCursor)
+        btn_normalizar.setToolTip("Ajusta la hora de entrada al horario configurado del empleado")
+        btn_normalizar.setStyleSheet("QPushButton { background-color: #2D2D2D; color: #F8F9FA; } QPushButton:hover { background-color: #3d3d3d; }")
+        btn_normalizar.clicked.connect(self._normalizar_entrada)
+        bottom.addWidget(btn_normalizar)
+
+        btn_eliminar = QPushButton("  Eliminar")
+        btn_eliminar.setCursor(Qt.PointingHandCursor)
+        btn_eliminar.setStyleSheet("QPushButton { background-color: #ef4444; } QPushButton:hover { background-color: #dc2626; }")
+        btn_eliminar.clicked.connect(self._eliminar_registro)
+        bottom.addWidget(btn_eliminar)
 
         layout.addLayout(bottom)
 
@@ -187,6 +205,7 @@ class AsistenciaView(QWidget):
                 estado,
             ]))
         self.tabla.set_data(rows)
+        self.lbl_contador.setText(f"{len(rows)} registro(s)")
 
     def _editar_registro(self, registro_id: int):
         reg = next((r for r in self._registros if r.id == registro_id), None)
@@ -241,6 +260,70 @@ class AsistenciaView(QWidget):
     def _ver_calendario(self):
         dialog = CalendarioDialog(parent=self)
         dialog.exec()
+
+    def _normalizar_entrada(self):
+        reg_id = self.tabla.selected_id()
+        if not reg_id:
+            QMessageBox.information(self, "Seleccion", "Selecciona un registro.")
+            return
+
+        reg = next((r for r in self._registros if r.id == reg_id), None)
+        if not reg or not reg.empleado:
+            return
+
+        emp = reg.empleado
+        if not emp.hora_entrada:
+            QMessageBox.warning(self, "Error", "El empleado no tiene horario de entrada configurado.")
+            return
+
+        h, m = emp.hora_entrada.split(":")
+        from datetime import time
+        hora_normal = time(int(h), int(m))
+
+        if reg.hora_entrada == hora_normal:
+            QMessageBox.information(self, "Info", "La entrada ya es igual al horario configurado.")
+            return
+
+        resp = QMessageBox.question(
+            self, "Normalizar Entrada",
+            f"Cambiar entrada de {reg.hora_entrada.strftime('%H:%M')} a {emp.hora_entrada} "
+            f"para {emp.nombre} el {reg.fecha.strftime('%d/%m/%Y')}?",
+            QMessageBox.Yes | QMessageBox.No,
+        )
+        if resp == QMessageBox.Yes:
+            try:
+                asistencia_service.registrar(emp.id, reg.fecha, hora_normal, reg.hora_salida)
+                self._cargar_lista()
+            except Exception as e:
+                QMessageBox.critical(self, "Error", str(e))
+
+    def _eliminar_registro(self):
+        reg_id = self.tabla.selected_id()
+        if not reg_id:
+            QMessageBox.information(self, "Seleccion", "Selecciona un registro.")
+            return
+
+        reg = next((r for r in self._registros if r.id == reg_id), None)
+        if not reg:
+            return
+
+        nombre = f"{reg.empleado.nombre} {reg.empleado.apellido or ''}" if reg.empleado else ""
+        resp = QMessageBox.question(
+            self, "Eliminar Registro",
+            f"Eliminar registro de {nombre} del {reg.fecha.strftime('%d/%m/%Y')}?",
+            QMessageBox.Yes | QMessageBox.No,
+        )
+        if resp == QMessageBox.Yes:
+            try:
+                from core.database import get_db
+                from models.asistencia import Asistencia
+                with get_db() as db:
+                    registro = db.query(Asistencia).get(reg_id)
+                    if registro:
+                        db.delete(registro)
+                self._cargar_lista()
+            except Exception as e:
+                QMessageBox.critical(self, "Error", str(e))
 
     # === TAB PERMISOS ===
     def _build_permisos_tab(self) -> QWidget:
