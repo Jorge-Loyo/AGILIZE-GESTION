@@ -4,19 +4,32 @@ echo   Agilize Gestion - Instalador Windows
 echo ============================================
 echo.
 
-:: Verificar Python
-python --version >nul 2>&1
-if %errorlevel% neq 0 (
-    py --version >nul 2>&1
-    if %errorlevel% neq 0 (
-        echo [ERROR] Python no encontrado. Instala Python 3.11+ desde python.org
-        pause
-        exit /b 1
-    )
+:: Verificar Python con diferentes comandos
+set PYTHON=
+where py >nul 2>&1
+if %errorlevel% equ 0 (
     set PYTHON=py
-) else (
-    set PYTHON=python
+    goto :found
 )
+where python >nul 2>&1
+if %errorlevel% equ 0 (
+    set PYTHON=python
+    goto :found
+)
+where python3 >nul 2>&1
+if %errorlevel% equ 0 (
+    set PYTHON=python3
+    goto :found
+)
+
+echo [ERROR] Python no encontrado. Instala Python 3.11+ desde python.org
+pause
+exit /b 1
+
+:found
+echo [OK] Python encontrado: %PYTHON%
+%PYTHON% --version
+echo.
 
 echo [1/5] Creando entorno virtual...
 %PYTHON% -m venv venv
@@ -44,14 +57,16 @@ if not exist .env (
 )
 
 echo [5/5] Verificando base de datos...
-echo [INFO] Asegurate de tener PostgreSQL corriendo y la base de datos creada.
-echo [INFO] Luego ejecuta: venv\Scripts\alembic upgrade head
-echo [INFO] Y despues: venv\Scripts\python -m scripts.seed
-
 echo.
 echo ============================================
 echo   Instalacion completada!
 echo ============================================
+echo.
+echo Pasos siguientes:
+echo   1. Edita .env con tus datos de PostgreSQL
+echo   2. Crea la BD: CREATE DATABASE agilize_gestion;
+echo   3. Ejecuta: venv\Scripts\alembic upgrade head
+echo   4. Ejecuta: venv\Scripts\python -m scripts.seed
 echo.
 echo Para ejecutar: venv\Scripts\python main.py
 echo Para generar .exe: venv\Scripts\python scripts\build.py
