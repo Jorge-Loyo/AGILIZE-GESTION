@@ -336,6 +336,16 @@ class ConfigGlobalView(QWidget):
         btn.setMinimumHeight(40)
         btn.clicked.connect(self._guardar_dev)
         layout.addWidget(btn)
+
+        # Boton reset
+        layout.addSpacing(30)
+        btn_reset = QPushButton("  Resetear Aplicacion (borrar datos)")
+        btn_reset.setMinimumHeight(40)
+        btn_reset.setCursor(Qt.PointingHandCursor)
+        btn_reset.setStyleSheet("QPushButton { background-color: #ef4444; } QPushButton:hover { background-color: #dc2626; }")
+        btn_reset.clicked.connect(self._resetear_app)
+        layout.addWidget(btn_reset)
+
         layout.addStretch()
         return page
 
@@ -377,3 +387,40 @@ class ConfigGlobalView(QWidget):
     def _build_update_page(self) -> QWidget:
         from modulos.admin.views.update_view import UpdateView
         return UpdateView()
+
+    # === RESETEAR ===
+    def _resetear_app(self):
+        from PySide6.QtWidgets import QMessageBox
+        resp = QMessageBox.warning(
+            self, "ATENCION - Resetear Aplicacion",
+            "Esto eliminara TODOS los datos operativos:\n\n"
+            "- Empleados\n"
+            "- Asistencias\n"
+            "- Liquidaciones\n"
+            "- Adelantos\n"
+            "- SAC\n"
+            "- Cierres\n"
+            "- Permisos/Ausencias\n"
+            "- Log de auditoria\n\n"
+            "Se mantienen: Usuarios, Roles, Configuraciones, Conceptos de Nomina, Feriados.\n\n"
+            "Esta accion NO se puede deshacer. Continuar?",
+            QMessageBox.Yes | QMessageBox.No,
+        )
+        if resp != QMessageBox.Yes:
+            return
+
+        # Doble confirmacion
+        resp2 = QMessageBox.critical(
+            self, "CONFIRMAR RESET",
+            "ULTIMA OPORTUNIDAD\n\nSe perderan todos los datos. Escribi 'RESETEAR' mentalmente y confirma.",
+            QMessageBox.Yes | QMessageBox.No,
+        )
+        if resp2 != QMessageBox.Yes:
+            return
+
+        try:
+            from services.reset_service import resetear_aplicacion
+            msg = resetear_aplicacion()
+            QMessageBox.information(self, "Reseteo Completado", msg)
+        except Exception as e:
+            QMessageBox.critical(self, "Error", str(e))

@@ -51,8 +51,15 @@ class NominaService:
             total_deducciones = Decimal("0")
             detalles = []
 
+            # Obtener dias trabajados para conceptos por_dia
+            from services.calculo_asistencia_service import calculo_asistencia_service
+            calc_asist = calculo_asistencia_service.calcular_bruto_periodo(empleado_id, periodo)
+            dias_trabajados = calc_asist["dias_trabajados"]
+
             for c in conceptos:
-                if c.porcentaje:
+                if getattr(c, 'calculo', '') == "por_dia" and c.monto_fijo:
+                    monto = c.monto_fijo * Decimal(str(dias_trabajados))
+                elif c.porcentaje:
                     monto = sueldo_basico * c.porcentaje / Decimal("100")
                 elif c.monto_fijo:
                     monto = c.monto_fijo

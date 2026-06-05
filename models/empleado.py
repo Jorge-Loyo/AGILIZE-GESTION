@@ -29,10 +29,11 @@ class Empleado(Base, TimestampMixin):
     __tablename__ = "empleados"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    legajo: Mapped[str] = mapped_column(String(20), unique=True, default="")
     nombre: Mapped[str] = mapped_column(String(100))
     apellido: Mapped[str] = mapped_column(String(100))
-    dni: Mapped[str] = mapped_column(String(20), unique=True)
-    cuil: Mapped[str] = mapped_column(String(20), unique=True)
+    dni: Mapped[str] = mapped_column(String(20), unique=True, nullable=True, default="")
+    cuil: Mapped[str] = mapped_column(String(20), unique=True, nullable=True, default="")
     email: Mapped[str] = mapped_column(String(150), default="")
     telefono: Mapped[str] = mapped_column(String(50), default="")
     direccion: Mapped[str] = mapped_column(String(250), default="")

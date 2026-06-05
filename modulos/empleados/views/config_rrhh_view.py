@@ -10,6 +10,7 @@ from decimal import Decimal
 from pathlib import Path
 import shutil
 from services.nomina_service import nomina_service
+from modulos.empleados.views.editar_concepto_dialog import EditarConceptoDialog
 from services.config_nomina_service import config_nomina_service
 from services.permiso_ausencia_service import permiso_ausencia_service
 from services.empresa_service import empresa_service
@@ -150,13 +151,13 @@ class ConfigRRHHView(QWidget):
         form.addWidget(QLabel("Codigo:"), 0, 0)
         self.concepto_codigo = QLineEdit()
         self.concepto_codigo.setMinimumHeight(32)
-        self.concepto_codigo.setPlaceholderText("Ej: PRES")
+        self.concepto_codigo.setPlaceholderText("Ej: VIAT")
         form.addWidget(self.concepto_codigo, 0, 1)
 
         form.addWidget(QLabel("Nombre:"), 0, 2)
         self.concepto_nombre = QLineEdit()
         self.concepto_nombre.setMinimumHeight(32)
-        self.concepto_nombre.setPlaceholderText("Ej: Presentismo")
+        self.concepto_nombre.setPlaceholderText("Ej: Viaticos")
         form.addWidget(self.concepto_nombre, 0, 3)
 
         form.addWidget(QLabel("Tipo:"), 1, 0)
@@ -165,32 +166,38 @@ class ConfigRRHHView(QWidget):
         self.concepto_tipo.addItems(["haber", "deduccion"])
         form.addWidget(self.concepto_tipo, 1, 1)
 
-        form.addWidget(QLabel("Porcentaje:"), 1, 2)
-        self.concepto_porcentaje = QDoubleSpinBox()
-        self.concepto_porcentaje.setMinimumHeight(32)
-        self.concepto_porcentaje.setRange(0, 100)
-        self.concepto_porcentaje.setDecimals(2)
-        self.concepto_porcentaje.setSuffix(" %")
-        form.addWidget(self.concepto_porcentaje, 1, 3)
+        form.addWidget(QLabel("Calculo:"), 1, 2)
+        self.concepto_calculo = QComboBox()
+        self.concepto_calculo.setMinimumHeight(32)
+        self.concepto_calculo.addItem("Porcentaje sobre bruto", "porcentaje")
+        self.concepto_calculo.addItem("Monto fijo", "fijo")
+        self.concepto_calculo.addItem("Monto por dia trabajado", "por_dia")
+        self.concepto_calculo.currentIndexChanged.connect(self._on_calculo_changed)
+        form.addWidget(self.concepto_calculo, 1, 3)
 
-        form.addWidget(QLabel("Monto Fijo:"), 2, 0)
-        self.concepto_monto = QDoubleSpinBox()
-        self.concepto_monto.setMinimumHeight(32)
-        self.concepto_monto.setRange(0, 9999999)
-        self.concepto_monto.setDecimals(2)
-        self.concepto_monto.setPrefix("$ ")
-        form.addWidget(self.concepto_monto, 2, 1)
+        self.lbl_valor = QLabel("Porcentaje:")
+        form.addWidget(self.lbl_valor, 2, 0)
+        self.concepto_valor = QDoubleSpinBox()
+        self.concepto_valor.setMinimumHeight(32)
+        self.concepto_valor.setRange(0, 100)
+        self.concepto_valor.setDecimals(2)
+        self.concepto_valor.setSuffix(" %")
+        form.addWidget(self.concepto_valor, 2, 1)
+
+        self.lbl_valor_info = QLabel("Se aplica sobre el sueldo bruto")
+        self.lbl_valor_info.setObjectName("subtitle")
+        form.addWidget(self.lbl_valor_info, 2, 2, 1, 2)
 
         btn_agregar = QPushButton("Agregar Concepto")
         btn_agregar.setMinimumHeight(34)
         btn_agregar.clicked.connect(self._agregar_concepto)
-        form.addWidget(btn_agregar, 2, 3)
+        form.addWidget(btn_agregar, 3, 3)
 
         layout.addLayout(form)
 
         self.tabla_conceptos = QTableWidget()
         self.tabla_conceptos.setColumnCount(5)
-        self.tabla_conceptos.setHorizontalHeaderLabels(["Codigo", "Nombre", "Tipo", "Porcentaje", "Monto Fijo"])
+        self.tabla_conceptos.setHorizontalHeaderLabels(["Codigo", "Nombre", "Tipo", "Calculo", "Valor"])
         self.tabla_conceptos.horizontalHeader().setStretchLastSection(True)
         self.tabla_conceptos.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.tabla_conceptos.setAlternatingRowColors(True)
@@ -198,47 +205,103 @@ class ConfigRRHHView(QWidget):
         self.tabla_conceptos.setEditTriggers(QTableWidget.NoEditTriggers)
         layout.addWidget(self.tabla_conceptos)
 
+        self.tabla_conceptos.doubleClicked.connect(self._editar_concepto_dblclick)
+
+        btn_editar_concepto = QPushButton("Editar Seleccionado")
+        btn_editar_concepto.setMinimumHeight(34)
+        btn_editar_concepto.setStyleSheet("QPushButton { background-color: #2D2D2D; color: #F8F9FA; } QPushButton:hover { background-color: #3d3d3d; }")
+        btn_editar_concepto.clicked.connect(self._editar_concepto)
+        layout.addWidget(btn_editar_concepto)
+
         self._cargar_conceptos()
         return page
+
+    def _editar_concepto_dblclick(self, index):
+        row = index.row()
+        self._abrir_editor_concepto(row)
+
+    def _editar_concepto(self):
+        row = self.tabla_conceptos.currentRow()
+        if row < 0:
+            QMessageBox.information(self, "Seleccion", "Selecciona un concepto.")
+            return
+        self._abrir_editor_concepto(row)
+
+    def _abrir_editor_concepto(self, row):
+        conceptos = nomina_service.listar_conceptos(solo_activos=False)
+        if row >= len(conceptos):
+            return
+        concepto_id = conceptos[row].id
+        dialog = EditarConceptoDialog(concepto_id, parent=self)
+        dialog.concepto_actualizado.connect(self._cargar_conceptos)
+        dialog.exec()
+
+    def _on_calculo_changed(self):
+        calculo = self.concepto_calculo.currentData()
+        self.concepto_valor.setPrefix("")
+        self.concepto_valor.setSuffix("")
+        if calculo == "porcentaje":
+            self.lbl_valor.setText("Porcentaje:")
+            self.concepto_valor.setSuffix(" %")
+            self.concepto_valor.setRange(0, 100)
+            self.lbl_valor_info.setText("Se aplica sobre el sueldo bruto")
+        elif calculo == "fijo":
+            self.lbl_valor.setText("Monto fijo:")
+            self.concepto_valor.setPrefix("$ ")
+            self.concepto_valor.setRange(0, 9999999)
+            self.lbl_valor_info.setText("Valor fijo por liquidacion")
+        elif calculo == "por_dia":
+            self.lbl_valor.setText("Monto/dia:")
+            self.concepto_valor.setPrefix("$ ")
+            self.concepto_valor.setRange(0, 9999999)
+            self.lbl_valor_info.setText("Se multiplica por dias trabajados del periodo")
 
     def _cargar_conceptos(self):
         conceptos = nomina_service.listar_conceptos(solo_activos=False)
         self.tabla_conceptos.setRowCount(len(conceptos))
+        calculo_labels = {"porcentaje": "% sobre bruto", "fijo": "Monto fijo", "por_dia": "Por dia trabajado"}
         for i, c in enumerate(conceptos):
+            calculo_tipo = getattr(c, 'calculo', None) or 'porcentaje'
+            if c.porcentaje:
+                valor_str = f"{c.porcentaje}%"
+            elif c.monto_fijo:
+                valor_str = f"$ {c.monto_fijo:,.2f}"
+            else:
+                valor_str = ""
             self.tabla_conceptos.setItem(i, 0, QTableWidgetItem(c.codigo))
             self.tabla_conceptos.setItem(i, 1, QTableWidgetItem(c.nombre))
             self.tabla_conceptos.setItem(i, 2, QTableWidgetItem(c.tipo.capitalize()))
-            self.tabla_conceptos.setItem(i, 3, QTableWidgetItem(f"{c.porcentaje}%" if c.porcentaje else ""))
-            self.tabla_conceptos.setItem(i, 4, QTableWidgetItem(f"$ {c.monto_fijo}" if c.monto_fijo else ""))
+            self.tabla_conceptos.setItem(i, 3, QTableWidgetItem(calculo_labels.get(calculo_tipo, calculo_tipo)))
+            self.tabla_conceptos.setItem(i, 4, QTableWidgetItem(valor_str))
 
     def _agregar_concepto(self):
         codigo = self.concepto_codigo.text().strip().upper()
         nombre = self.concepto_nombre.text().strip()
         tipo = self.concepto_tipo.currentText()
-        porcentaje = self.concepto_porcentaje.value()
-        monto = self.concepto_monto.value()
+        calculo = self.concepto_calculo.currentData()
+        valor = self.concepto_valor.value()
 
         if not codigo or not nombre:
             QMessageBox.warning(self, "Error", "Codigo y Nombre son obligatorios.")
             return
-        if porcentaje == 0 and monto == 0:
-            QMessageBox.warning(self, "Error", "Ingresa un porcentaje o un monto fijo.")
+        if valor == 0:
+            QMessageBox.warning(self, "Error", "Ingresa un valor.")
             return
 
         datos = {
             "codigo": codigo,
             "nombre": nombre,
             "tipo": tipo,
-            "porcentaje": Decimal(str(porcentaje)) if porcentaje > 0 else None,
-            "monto_fijo": Decimal(str(monto)) if monto > 0 else None,
+            "calculo": calculo,
+            "porcentaje": Decimal(str(valor)) if calculo == "porcentaje" else None,
+            "monto_fijo": Decimal(str(valor)) if calculo in ("fijo", "por_dia") else None,
         }
 
         try:
             nomina_service.crear_concepto(datos)
             self.concepto_codigo.clear()
             self.concepto_nombre.clear()
-            self.concepto_porcentaje.setValue(0)
-            self.concepto_monto.setValue(0)
+            self.concepto_valor.setValue(0)
             self._cargar_conceptos()
             QMessageBox.information(self, "OK", "Concepto creado.")
         except Exception as e:

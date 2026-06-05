@@ -25,6 +25,7 @@ class Asistencia(Base, TimestampMixin):
     horas_normales: Mapped[Decimal] = mapped_column(Numeric(5, 2), default=0)
     horas_extra: Mapped[Decimal] = mapped_column(Numeric(5, 2), default=0)
     es_feriado: Mapped[bool] = mapped_column(Boolean, default=False)
+    incompleto: Mapped[bool] = mapped_column(Boolean, default=False)
 
     empleado = relationship("Empleado")
 

@@ -46,18 +46,24 @@ class LiquidarView(QWidget):
         header_layout.setColumnStretch(1, 1)
         header_layout.setColumnStretch(3, 1)
 
-        header_layout.addWidget(QLabel("Empleado:"), 0, 0)
+        header_layout.addWidget(QLabel("Periodo:"), 0, 0)
+        self.combo_periodo = QComboBox()
+        self.combo_periodo.setMinimumHeight(32)
+        self.combo_periodo.currentIndexChanged.connect(self._on_periodo_changed)
+        header_layout.addWidget(self.combo_periodo, 0, 1)
+
+        header_layout.addWidget(QLabel("Empleado:"), 0, 2)
         self.combo_empleado = QComboBox()
         self.combo_empleado.setMinimumHeight(32)
         self.combo_empleado.currentIndexChanged.connect(self._recalcular)
-        header_layout.addWidget(self.combo_empleado, 0, 1)
+        header_layout.addWidget(self.combo_empleado, 0, 3)
 
-        header_layout.addWidget(QLabel("Per\u00edodo:"), 0, 2)
-        self.input_periodo = QLineEdit()
-        self.input_periodo.setMinimumHeight(32)
-        self.input_periodo.setText(date.today().strftime("%Y-%m"))
-        self.input_periodo.textChanged.connect(self._recalcular)
-        header_layout.addWidget(self.input_periodo, 0, 3)
+        # Boton verificar
+        btn_verificar = QPushButton("Verificar Periodo")
+        btn_verificar.setMinimumHeight(32)
+        btn_verificar.setStyleSheet("QPushButton { background-color: #2D2D2D; color: #F8F9FA; } QPushButton:hover { background-color: #3d3d3d; }")
+        btn_verificar.clicked.connect(self._verificar_periodo)
+        header_layout.addWidget(btn_verificar, 1, 3)
 
         clayout.addWidget(grp_header)
 
@@ -151,11 +157,22 @@ class LiquidarView(QWidget):
         return g
 
     def _cargar_datos(self):
-        self._empleados = empleado_service.listar()
-        self.combo_empleado.clear()
-        for emp in self._empleados:
-            self.combo_empleado.addItem(f"{emp.apellido}, {emp.nombre} \u2014 {emp.dni}", emp.id)
+        from services.liquidacion_pendiente_service import liquidacion_pendiente_service
 
+        # Cargar periodos pendientes
+        periodos = liquidacion_pendiente_service.periodos_pendientes()
+        self.combo_periodo.clear()
+        for p in periodos:
+            resumen = liquidacion_pendiente_service.resumen_periodo(p)
+            self.combo_periodo.addItem(f"{p} ({resumen['pendientes']} pendientes)", p)
+
+        if not periodos:
+            # Mostrar todos los periodos con asistencia
+            todos = liquidacion_pendiente_service.periodos_con_asistencia()
+            for p in todos:
+                self.combo_periodo.addItem(f"{p} (completo)", p)
+
+        # Cargar conceptos
         self._conceptos = nomina_service.listar_conceptos()
         row, col = 0, 0
         for c in self._conceptos:
@@ -175,9 +192,44 @@ class LiquidarView(QWidget):
                 col = 0
                 row += 1
 
+    def _on_periodo_changed(self):
+        """Al cambiar periodo, cargar empleados pendientes de ese periodo."""
+        from services.liquidacion_pendiente_service import liquidacion_pendiente_service
+        periodo = self.combo_periodo.currentData()
+        if not periodo:
+            return
+
+        empleados = liquidacion_pendiente_service.empleados_pendientes(periodo)
+        self.combo_empleado.clear()
+        empleados_sorted = sorted(empleados, key=lambda e: int(e.legajo) if e.legajo and e.legajo.isdigit() else 9999)
+        for emp in empleados_sorted:
+            self.combo_empleado.addItem(f"{emp.legajo} - {emp.nombre} {emp.apellido or ''}", emp.id)
+
+    def _verificar_periodo(self):
+        """Muestra resumen del estado de liquidacion del periodo."""
+        from services.liquidacion_pendiente_service import liquidacion_pendiente_service
+        periodo = self.combo_periodo.currentData()
+        if not periodo:
+            QMessageBox.information(self, "Info", "No hay periodo seleccionado.")
+            return
+
+        resumen = liquidacion_pendiente_service.resumen_periodo(periodo)
+        estado = "COMPLETO" if resumen["completo"] else "PENDIENTE"
+        msg = (
+            f"Periodo: {resumen['periodo']}\n"
+            f"Estado: {estado}\n\n"
+            f"Empleados con asistencia: {resumen['total_con_asistencia']}\n"
+            f"Ya liquidados: {resumen['liquidados']}\n"
+            f"Pendientes: {resumen['pendientes']}\n"
+        )
+        if resumen["completo"]:
+            QMessageBox.information(self, "Periodo Completo", msg)
+        else:
+            QMessageBox.warning(self, "Periodo Pendiente", msg)
+
     def _recalcular(self, *args):
         emp_id = self.combo_empleado.currentData()
-        periodo = self.input_periodo.text().strip()
+        periodo = self.combo_periodo.currentData()
         if not emp_id or not periodo or len(periodo) < 7:
             return
 
@@ -210,7 +262,10 @@ class LiquidarView(QWidget):
         filas = [("Bruto por Asistencia", "Haber", basico)]
 
         for c in conceptos:
-            if c.porcentaje:
+            if c.calculo == "por_dia" and c.monto_fijo:
+                # Monto por dia trabajado
+                monto = (c.monto_fijo * calc["dias_trabajados"]).quantize(Decimal("0.01"))
+            elif c.porcentaje:
                 monto = (basico * c.porcentaje / Decimal("100")).quantize(Decimal("0.01"))
             elif c.monto_fijo:
                 monto = c.monto_fijo
@@ -252,7 +307,7 @@ class LiquidarView(QWidget):
 
     def _confirmar(self):
         emp_id = self.combo_empleado.currentData()
-        periodo = self.input_periodo.text().strip()
+        periodo = self.combo_periodo.currentData()
 
         if not emp_id or not periodo:
             QMessageBox.warning(self, "Error", "Complet\u00e1 empleado y per\u00edodo.")

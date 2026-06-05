@@ -12,6 +12,26 @@ class CierreService:
             return cierre.cerrado if cierre else False
 
     def cerrar_asistencia(self, periodo: str, usuario_id: int) -> CierreAsistencia:
+        # Verificar si hay registros incompletos
+        from models.asistencia import Asistencia
+        anio, mes = int(periodo.split("-")[0]), int(periodo.split("-")[1])
+        from datetime import date
+        if mes == 12:
+            desde = date(anio, mes, 1)
+            hasta = date(anio + 1, 1, 1)
+        else:
+            desde = date(anio, mes, 1)
+            hasta = date(anio, mes + 1, 1)
+
+        with get_db() as db:
+            incompletos = db.query(Asistencia).filter(
+                Asistencia.fecha >= desde,
+                Asistencia.fecha < hasta,
+                Asistencia.incompleto == True,
+            ).count()
+            if incompletos > 0:
+                raise ValueError(f"No se puede cerrar: hay {incompletos} registro(s) incompleto(s) en el periodo. Completalos antes de cerrar.")
+
         with get_db() as db:
             cierre = db.query(CierreAsistencia).filter_by(periodo=periodo).first()
             if cierre:

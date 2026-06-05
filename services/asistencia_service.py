@@ -9,7 +9,7 @@ JORNADA_DEFAULT = Decimal("8")
 
 
 class AsistenciaService:
-    def registrar(self, empleado_id: int, fecha: date, hora_entrada: time, hora_salida: time) -> Asistencia:
+    def registrar(self, empleado_id: int, fecha: date, hora_entrada: time, hora_salida: time, incompleto: bool = False) -> Asistencia:
         # Validar cierre
         from services.cierre_service import cierre_service
         periodo = fecha.strftime("%Y-%m")
@@ -21,7 +21,10 @@ class AsistenciaService:
         horas_totales = self._calcular_horas(hora_entrada, hora_salida)
         jornada = self._get_jornada_empleado(empleado_id)
 
-        if tipo_dia in (TipoDia.SABADO, TipoDia.DOMINGO, TipoDia.FERIADO):
+        if incompleto:
+            horas_normales = Decimal("0")
+            horas_extra = Decimal("0")
+        elif tipo_dia in (TipoDia.SABADO, TipoDia.DOMINGO, TipoDia.FERIADO):
             horas_normales = Decimal("0")
             horas_extra = horas_totales
         else:
@@ -38,6 +41,7 @@ class AsistenciaService:
                 existente.horas_normales = horas_normales
                 existente.horas_extra = horas_extra
                 existente.es_feriado = es_feriado
+                existente.incompleto = incompleto
                 db.flush()
                 db.refresh(existente)
                 return existente
@@ -51,6 +55,7 @@ class AsistenciaService:
                 horas_normales=horas_normales,
                 horas_extra=horas_extra,
                 es_feriado=es_feriado,
+                incompleto=incompleto,
             )
             db.add(asistencia)
             db.flush()

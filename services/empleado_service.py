@@ -32,6 +32,10 @@ class EmpleadoService:
 
     def crear(self, datos: dict) -> Empleado:
         with get_db() as db:
+            # Generar legajo si no tiene
+            if not datos.get("legajo"):
+                count = db.query(Empleado).count()
+                datos["legajo"] = str(count + 1)
             empleado = Empleado(**datos)
             db.add(empleado)
             db.flush()

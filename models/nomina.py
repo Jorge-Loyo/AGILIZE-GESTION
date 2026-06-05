@@ -13,6 +13,7 @@ class ConceptoNomina(Base, TimestampMixin):
     codigo: Mapped[str] = mapped_column(String(20), unique=True)
     nombre: Mapped[str] = mapped_column(String(150))
     tipo: Mapped[str] = mapped_column(String(20))  # "haber" o "deduccion"
+    calculo: Mapped[str] = mapped_column(String(20), default="porcentaje")  # "porcentaje", "fijo", "por_dia"
     porcentaje: Mapped[Decimal | None] = mapped_column(Numeric(8, 4), nullable=True)
     monto_fijo: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
     activo: Mapped[bool] = mapped_column(Boolean, default=True)

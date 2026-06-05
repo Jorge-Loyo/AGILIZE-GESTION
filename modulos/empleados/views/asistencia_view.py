@@ -2,24 +2,25 @@ from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QTabWidget,
     QComboBox, QDateEdit, QTimeEdit, QPushButton,
     QLabel, QMessageBox, QFrame, QGridLayout,
-    QCheckBox, QLineEdit, QGroupBox,
+    QCheckBox, QLineEdit, QGroupBox, QFileDialog,
     QTableWidget, QTableWidgetItem, QHeaderView,
 )
 from PySide6.QtCore import Qt, QDate, QTime
 from datetime import date
 from ui.components.data_table import DataTable
 from modulos.empleados.views.editar_asistencia_dialog import EditarAsistenciaDialog
+from modulos.empleados.views.registro_manual_dialog import RegistroManualDialog
 from services.asistencia_service import asistencia_service
 from services.permiso_ausencia_service import permiso_ausencia_service
 from services.empleado_service import empleado_service
 from services.export_service import exportar_excel
+from services.import_fichadas_service import importar_fichadas
 import os
 
 
 class AsistenciaView(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self._empleados = []
         self._registros = []
         self._build_ui()
 
@@ -39,161 +40,119 @@ class AsistenciaView(QWidget):
         page = QWidget()
         layout = QVBoxLayout(page)
         layout.setContentsMargins(0, 12, 0, 0)
-        layout.setSpacing(12)
+        layout.setSpacing(8)
 
-        # Formulario
-        form_frame = QFrame()
-        form_frame.setObjectName("card")
-        form_layout = QVBoxLayout(form_frame)
-        form_layout.setSpacing(10)
+        # Filtros
+        filtros = QHBoxLayout()
+        filtros.setSpacing(8)
 
-        lbl = QLabel("Registrar Asistencia")
-        lbl.setStyleSheet("font-size: 15px; font-weight: bold;")
-        form_layout.addWidget(lbl)
+        filtros.addWidget(QLabel("Empleado:"))
+        self.filtro_empleado = QComboBox()
+        self.filtro_empleado.setMinimumHeight(32)
+        self.filtro_empleado.setMinimumWidth(200)
+        self.filtro_empleado.addItem("Todos", None)
+        emps = asistencia_service.listar_empleados_activos()
+        emps_sorted = sorted(emps, key=lambda e: int(e.legajo) if e.legajo and e.legajo.isdigit() else 9999)
+        for emp in emps_sorted:
+            self.filtro_empleado.addItem(f"{emp.legajo} - {emp.nombre} {emp.apellido or ''}", emp.id)
+        self.filtro_empleado.currentIndexChanged.connect(self._cargar_lista)
+        filtros.addWidget(self.filtro_empleado)
 
-        row = QHBoxLayout()
-        row.setSpacing(10)
+        filtros.addWidget(QLabel("Periodo:"))
+        self.filtro_periodo = QLineEdit()
+        self.filtro_periodo.setMinimumHeight(32)
+        self.filtro_periodo.setPlaceholderText("YYYY-MM")
+        self.filtro_periodo.setMaximumWidth(120)
+        self.filtro_periodo.returnPressed.connect(self._cargar_lista)
+        filtros.addWidget(self.filtro_periodo)
 
-        col1 = QVBoxLayout()
-        col1.addWidget(QLabel("Empleado"))
-        self.combo_empleado = QComboBox()
-        self.combo_empleado.setMinimumHeight(34)
-        col1.addWidget(self.combo_empleado)
-        row.addLayout(col1)
+        btn_filtrar = QPushButton("Filtrar")
+        btn_filtrar.setMinimumHeight(32)
+        btn_filtrar.clicked.connect(self._cargar_lista)
+        filtros.addWidget(btn_filtrar)
 
-        col2 = QVBoxLayout()
-        col2.addWidget(QLabel("Fecha"))
-        self.input_fecha = QDateEdit()
-        self.input_fecha.setMinimumHeight(34)
-        self.input_fecha.setCalendarPopup(True)
-        self.input_fecha.setDate(QDate.currentDate())
-        col2.addWidget(self.input_fecha)
-        row.addLayout(col2)
+        filtros.addWidget(QLabel("Ordenar:"))
+        self.filtro_orden = QComboBox()
+        self.filtro_orden.setMinimumHeight(32)
+        self.filtro_orden.addItem("Fecha", "fecha")
+        self.filtro_orden.addItem("Legajo", "legajo")
+        self.filtro_orden.addItem("Nombre", "nombre")
+        self.filtro_orden.addItem("Apellido", "apellido")
+        self.filtro_orden.currentIndexChanged.connect(self._cargar_lista)
+        filtros.addWidget(self.filtro_orden)
 
-        col3 = QVBoxLayout()
-        col3.addWidget(QLabel("Entrada"))
-        self.input_entrada = QTimeEdit()
-        self.input_entrada.setMinimumHeight(34)
-        self.input_entrada.setTime(QTime(8, 0))
-        self.input_entrada.setDisplayFormat("HH:mm")
-        col3.addWidget(self.input_entrada)
-        row.addLayout(col3)
-
-        col4 = QVBoxLayout()
-        col4.addWidget(QLabel("Salida"))
-        self.input_salida = QTimeEdit()
-        self.input_salida.setMinimumHeight(34)
-        self.input_salida.setTime(QTime(17, 0))
-        self.input_salida.setDisplayFormat("HH:mm")
-        col4.addWidget(self.input_salida)
-        row.addLayout(col4)
-
-        col5 = QVBoxLayout()
-        col5.addWidget(QLabel(""))
-        self.btn_registrar = QPushButton("Registrar")
-        self.btn_registrar.setMinimumHeight(34)
-        self.btn_registrar.setCursor(Qt.PointingHandCursor)
-        self.btn_registrar.clicked.connect(self._registrar)
-        col5.addWidget(self.btn_registrar)
-        row.addLayout(col5)
-
-        form_layout.addLayout(row)
-        layout.addWidget(form_frame)
+        filtros.addStretch()
+        layout.addLayout(filtros)
 
         # Tabla
-        self.tabla = DataTable(["Empleado", "Fecha", "Entrada", "Salida", "Tipo Dia", "Hs Normales", "Hs Extra"])
+        self.tabla = DataTable(["Empleado", "Fecha", "Entrada", "Salida", "Tipo Dia", "Hs Normales", "Hs Extra", "Estado"])
         self.tabla.btn_nuevo.hide()
-        self.tabla.btn_buscar.setText("Filtrar")
-        self.tabla.input_busqueda.setPlaceholderText("Buscar empleado...")
-        self.tabla.btn_buscar.clicked.connect(self._cargar_lista)
-        self.tabla.input_busqueda.returnPressed.connect(self._cargar_lista)
+        self.tabla.btn_buscar.hide()
+        self.tabla.input_busqueda.hide()
         self.tabla.row_double_clicked.connect(self._editar_registro)
         layout.addWidget(self.tabla)
 
-        # Filtro periodo
-        filtro_row = QHBoxLayout()
-        filtro_row.addWidget(QLabel("Periodo:"))
-        self.filtro_periodo = QLineEdit()
-        self.filtro_periodo.setMinimumHeight(32)
-        self.filtro_periodo.setPlaceholderText("YYYY-MM (vacio = todos)")
-        self.filtro_periodo.setMaximumWidth(180)
-        self.filtro_periodo.returnPressed.connect(self._cargar_lista)
-        filtro_row.addWidget(self.filtro_periodo)
-        filtro_row.addStretch()
-        layout.addLayout(filtro_row)
-
-        # Barra inferior
+        # Barra inferior con botones
         bottom = QHBoxLayout()
+        bottom.setSpacing(8)
         bottom.addStretch()
 
-        btn_export = QPushButton("Exportar Excel")
+        btn_manual = QPushButton("  Registro Manual")
+        btn_manual.setCursor(Qt.PointingHandCursor)
+        btn_manual.clicked.connect(self._registro_manual)
+        bottom.addWidget(btn_manual)
+
+        btn_importar = QPushButton("  Importar Fichadas")
+        btn_importar.setCursor(Qt.PointingHandCursor)
+        btn_importar.setStyleSheet("QPushButton { background-color: #6366f1; } QPushButton:hover { background-color: #4f46e5; }")
+        btn_importar.clicked.connect(self._importar_fichadas)
+        bottom.addWidget(btn_importar)
+
+        btn_export = QPushButton("  Exportar Excel")
         btn_export.setCursor(Qt.PointingHandCursor)
         btn_export.setStyleSheet("QPushButton { background-color: #10b981; } QPushButton:hover { background-color: #059669; }")
         btn_export.clicked.connect(self._exportar)
         bottom.addWidget(btn_export)
 
-        btn_editar = QPushButton("Editar registro")
+        btn_editar = QPushButton("  Editar")
         btn_editar.setCursor(Qt.PointingHandCursor)
         btn_editar.setStyleSheet("QPushButton { background-color: #2D2D2D; color: #F8F9FA; } QPushButton:hover { background-color: #3d3d3d; }")
         btn_editar.clicked.connect(self._editar_seleccionado)
         bottom.addWidget(btn_editar)
+
         layout.addLayout(bottom)
 
-        self._cargar_empleados()
         self._cargar_lista()
         return page
 
-    def _cargar_empleados(self):
-        self._empleados = asistencia_service.listar_empleados_activos()
-        self.combo_empleado.clear()
-        for emp in self._empleados:
-            self.combo_empleado.addItem(f"{emp.apellido}, {emp.nombre}", emp.id)
-        self.combo_empleado.currentIndexChanged.connect(self._on_empleado_changed)
-        if self._empleados:
-            self._on_empleado_changed()
-
-    def _on_empleado_changed(self):
-        idx = self.combo_empleado.currentIndex()
-        if idx < 0 or idx >= len(self._empleados):
-            return
-        emp = self._empleados[idx]
-        if emp.hora_entrada:
-            h, m = emp.hora_entrada.split(":")
-            self.input_entrada.setTime(QTime(int(h), int(m)))
-        if emp.hora_salida:
-            h, m = emp.hora_salida.split(":")
-            self.input_salida.setTime(QTime(int(h), int(m)))
-
-    def _registrar(self):
-        emp_id = self.combo_empleado.currentData()
-        if not emp_id:
-            QMessageBox.warning(self, "Error", "Selecciona un empleado.")
-            return
-        fecha = self.input_fecha.date().toPython()
-        entrada = self.input_entrada.time().toPython()
-        salida = self.input_salida.time().toPython()
-        if entrada == salida:
-            QMessageBox.warning(self, "Error", "Entrada y salida no pueden ser iguales.")
-            return
-        try:
-            reg = asistencia_service.registrar(emp_id, fecha, entrada, salida)
-            QMessageBox.information(self, "Registrado",
-                f"Dia: {reg.tipo_dia.upper()} | Normales: {reg.horas_normales}h | Extra: {reg.horas_extra}h")
-            self._cargar_lista()
-        except Exception as e:
-            QMessageBox.critical(self, "Error", str(e))
+    def _registro_manual(self):
+        dialog = RegistroManualDialog(parent=self)
+        dialog.registro_creado.connect(self._cargar_lista)
+        dialog.exec()
 
     def _cargar_lista(self):
-        busqueda = self.tabla.input_busqueda.text().strip().lower()
+        emp_id_filtro = self.filtro_empleado.currentData()
         periodo_filtro = self.filtro_periodo.text().strip()
-        self._registros = asistencia_service.listar()
+        self._registros = asistencia_service.listar(empleado_id=emp_id_filtro)
+        # Filtrar por periodo
+        registros_filtrados = self._registros
+        if periodo_filtro:
+            registros_filtrados = [r for r in self._registros if r.fecha.strftime("%Y-%m").startswith(periodo_filtro)]
+        # Ordenar
+        orden = self.filtro_orden.currentData() if hasattr(self, 'filtro_orden') else "fecha"
+        if orden == "fecha":
+            registros_filtrados.sort(key=lambda r: r.fecha)
+        elif orden == "legajo":
+            registros_filtrados.sort(key=lambda r: int(r.empleado.legajo) if r.empleado and r.empleado.legajo and r.empleado.legajo.isdigit() else 9999)
+        elif orden == "nombre":
+            registros_filtrados.sort(key=lambda r: r.empleado.nombre.lower() if r.empleado else "")
+        elif orden == "apellido":
+            registros_filtrados.sort(key=lambda r: (r.empleado.apellido or "").lower() if r.empleado else "")
+
         rows = []
-        for r in self._registros:
-            nombre = f"{r.empleado.apellido}, {r.empleado.nombre}" if r.empleado else ""
-            if busqueda and busqueda not in nombre.lower():
-                continue
-            if periodo_filtro and not r.fecha.strftime("%Y-%m").startswith(periodo_filtro):
-                continue
+        for r in registros_filtrados:
+            nombre = f"{r.empleado.nombre} {r.empleado.apellido or ''}" if r.empleado else ""
+            estado = "INCOMPLETO" if getattr(r, 'incompleto', False) else "OK"
             rows.append((r.id, [
                 nombre,
                 r.fecha.strftime("%d/%m/%Y"),
@@ -202,6 +161,7 @@ class AsistenciaView(QWidget):
                 r.tipo_dia.capitalize(),
                 str(r.horas_normales),
                 str(r.horas_extra),
+                estado,
             ]))
         self.tabla.set_data(rows)
 
@@ -224,7 +184,7 @@ class AsistenciaView(QWidget):
         headers = ["Empleado", "Fecha", "Entrada", "Salida", "Tipo Dia", "Hs Normales", "Hs Extra"]
         rows = []
         for r in self._registros:
-            nombre = f"{r.empleado.apellido}, {r.empleado.nombre}" if r.empleado else ""
+            nombre = f"{r.empleado.apellido or ''}, {r.empleado.nombre}" if r.empleado else ""
             rows.append([nombre, r.fecha.strftime("%d/%m/%Y"),
                 r.hora_entrada.strftime("%H:%M") if r.hora_entrada else "",
                 r.hora_salida.strftime("%H:%M") if r.hora_salida else "",
@@ -234,6 +194,26 @@ class AsistenciaView(QWidget):
             os.startfile(path)
         except Exception as e:
             QMessageBox.critical(self, "Error", str(e))
+
+    def _importar_fichadas(self):
+        filepath, _ = QFileDialog.getOpenFileName(
+            self, "Seleccionar archivo de fichadas", "", "Excel (*.xlsx *.xls)"
+        )
+        if not filepath:
+            return
+        try:
+            resultado = importar_fichadas(filepath)
+            msg = f"Fichadas importadas: {resultado['importados']}\n"
+            if resultado["no_encontrados"]:
+                msg += f"\nEmpleados no encontrados ({len(resultado['no_encontrados'])}):\n"
+                msg += "\n".join(f"  - {n}" for n in resultado["no_encontrados"][:10])
+            if resultado["errores"]:
+                msg += f"\n\nErrores: {len(resultado['errores'])}"
+                msg += "\n".join(f"  - {e}" for e in resultado["errores"][:5])
+            QMessageBox.information(self, "Importacion de Fichadas", msg)
+            self._cargar_lista()
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Error al importar: {e}")
 
     # === TAB PERMISOS ===
     def _build_permisos_tab(self) -> QWidget:
@@ -302,20 +282,18 @@ class AsistenciaView(QWidget):
         emps = empleado_service.listar()
         self.perm_empleado.clear()
         for e in emps:
-            self.perm_empleado.addItem(f"{e.apellido}, {e.nombre}", e.id)
-
+            self.perm_empleado.addItem(f"{e.legajo} - {e.nombre} {e.apellido or ''}", e.id)
         tipos = permiso_ausencia_service.listar_tipos()
         self.perm_tipo.clear()
         for t in tipos:
             self.perm_tipo.addItem(t.nombre, t.id)
-
         self._cargar_tabla_permisos()
 
     def _cargar_tabla_permisos(self):
         permisos = permiso_ausencia_service.listar_permisos()
         self.tabla_permisos.setRowCount(len(permisos))
         for i, p in enumerate(permisos):
-            nombre = f"{p.empleado.apellido}, {p.empleado.nombre}" if p.empleado else ""
+            nombre = f"{p.empleado.nombre} {p.empleado.apellido or ''}" if p.empleado else ""
             self.tabla_permisos.setItem(i, 0, QTableWidgetItem(nombre))
             self.tabla_permisos.setItem(i, 1, QTableWidgetItem(p.tipo_permiso.nombre if p.tipo_permiso else ""))
             self.tabla_permisos.setItem(i, 2, QTableWidgetItem(p.fecha_desde.strftime("%d/%m/%Y")))
@@ -401,14 +379,14 @@ class AsistenciaView(QWidget):
         emps = empleado_service.listar()
         self.aus_empleado.clear()
         for e in emps:
-            self.aus_empleado.addItem(f"{e.apellido}, {e.nombre}", e.id)
+            self.aus_empleado.addItem(f"{e.legajo} - {e.nombre} {e.apellido or ''}", e.id)
         self._cargar_tabla_ausencias()
 
     def _cargar_tabla_ausencias(self):
         ausencias = permiso_ausencia_service.listar_ausencias()
         self.tabla_ausencias.setRowCount(len(ausencias))
         for i, a in enumerate(ausencias):
-            nombre = f"{a.empleado.apellido}, {a.empleado.nombre}" if a.empleado else ""
+            nombre = f"{a.empleado.nombre} {a.empleado.apellido or ''}" if a.empleado else ""
             self.tabla_ausencias.setItem(i, 0, QTableWidgetItem(nombre))
             self.tabla_ausencias.setItem(i, 1, QTableWidgetItem(a.fecha.strftime("%d/%m/%Y")))
             self.tabla_ausencias.setItem(i, 2, QTableWidgetItem(a.periodo))
