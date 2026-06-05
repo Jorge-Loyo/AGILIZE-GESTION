@@ -1,0 +1,115 @@
+from PySide6.QtWidgets import (
+    QWidget, QVBoxLayout, QLabel,
+    QLineEdit, QPushButton, QSpacerItem, QSizePolicy,
+)
+from PySide6.QtCore import Qt, Signal, QSize
+from PySide6.QtGui import QPixmap
+from services.logo_service import get_dev_logo_path
+from services.empresa_service import empresa_service
+
+
+class LoginView(QWidget):
+    login_success = Signal()
+
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Agilize Gestion")
+        self.setFixedSize(440, 520)
+        self._build_ui()
+
+    def _build_ui(self):
+        layout = QVBoxLayout(self)
+        layout.setAlignment(Qt.AlignCenter)
+        layout.setContentsMargins(60, 40, 60, 40)
+        layout.setSpacing(10)
+
+        # Logo
+        icon_label = QLabel()
+        pixmap = QPixmap(get_dev_logo_path()).scaled(QSize(64, 64), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        icon_label.setPixmap(pixmap)
+        icon_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(icon_label)
+
+        # Titulo
+        title = QLabel(empresa_service.obtener("dev_nombre") or "Agilize")
+        title.setObjectName("title")
+        title.setAlignment(Qt.AlignCenter)
+        layout.addWidget(title)
+
+        subtitle = QLabel("Gestion Empresarial")
+        subtitle.setObjectName("subtitle")
+        subtitle.setAlignment(Qt.AlignCenter)
+        layout.addWidget(subtitle)
+
+        layout.addSpacerItem(QSpacerItem(0, 30, QSizePolicy.Minimum, QSizePolicy.Fixed))
+
+        # Usuario
+        self.input_user = QLineEdit()
+        self.input_user.setPlaceholderText("Usuario")
+        self.input_user.setMinimumHeight(40)
+        layout.addWidget(self.input_user)
+
+        layout.addSpacerItem(QSpacerItem(0, 6, QSizePolicy.Minimum, QSizePolicy.Fixed))
+
+        # Password
+        self.input_pass = QLineEdit()
+        self.input_pass.setPlaceholderText("Contrasena")
+        self.input_pass.setEchoMode(QLineEdit.Password)
+        self.input_pass.setMinimumHeight(40)
+        layout.addWidget(self.input_pass)
+
+        # Error
+        self.lbl_error = QLabel("")
+        self.lbl_error.setObjectName("error")
+        self.lbl_error.setAlignment(Qt.AlignCenter)
+        self.lbl_error.hide()
+        layout.addWidget(self.lbl_error)
+
+        layout.addSpacerItem(QSpacerItem(0, 20, QSizePolicy.Minimum, QSizePolicy.Fixed))
+
+        # Boton
+        self.btn_login = QPushButton("  Ingresar")
+        self.btn_login.setMinimumHeight(44)
+        self.btn_login.setCursor(Qt.PointingHandCursor)
+        self.btn_login.clicked.connect(self._on_login)
+        layout.addWidget(self.btn_login)
+
+        layout.addStretch()
+
+        # Version
+        version = QLabel("v1.0.0")
+        version.setObjectName("subtitle")
+        version.setAlignment(Qt.AlignCenter)
+        layout.addWidget(version)
+
+        # Enter
+        self.input_pass.returnPressed.connect(self._on_login)
+        self.input_user.returnPressed.connect(lambda: self.input_pass.setFocus())
+
+    def _on_login(self):
+        username = self.input_user.text().strip()
+        password = self.input_pass.text()
+
+        if not username or not password:
+            self._show_error("Completa usuario y contrasena")
+            return
+
+        from services.auth_service import auth_service
+        success, msg = auth_service.login(username, password)
+
+        if success:
+            self.lbl_error.hide()
+            self.login_success.emit()
+        else:
+            self._show_error(msg)
+
+    def _show_error(self, msg: str):
+        self.lbl_error.setText(msg)
+        self.lbl_error.show()
+
+    def closeEvent(self, event):
+        from services.auth_service import auth_service
+        if not auth_service.current_user:
+            from PySide6.QtWidgets import QApplication
+            QApplication.instance().quit()
+        event.accept()

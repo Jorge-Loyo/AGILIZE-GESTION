@@ -1,0 +1,17 @@
+# UI
+PySide6>=6.7.0
+qt-material>=2.14
+
+# Base de Datos
+SQLAlchemy>=2.0
+alembic>=1.13
+psycopg2-binary>=2.9
+
+# Seguridad
+bcrypt>=4.1
+
+# Configuración
+python-dotenv>=1.0
+
+# Utilidades
+loguru>=0.7
