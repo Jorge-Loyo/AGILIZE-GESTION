@@ -4,7 +4,7 @@ from core.logging_config import logger
 
 class AppController:
     def __init__(self):
-        from PySide6.QtWidgets import QApplication
+        from PySide6.QtWidgets import QApplication, QMessageBox
         from PySide6.QtGui import QIcon
         from core.config import settings
         from ui.theme_manager import theme_manager
@@ -16,9 +16,27 @@ class AppController:
         self.app.setQuitOnLastWindowClosed(False)
 
         # Icono de la aplicacion
-        self.app.setWindowIcon(QIcon(get_dev_logo_path()))
+        logo = get_dev_logo_path()
+        if logo:
+            self.app.setWindowIcon(QIcon(logo))
 
         theme_manager.apply(self.app, theme_manager.DARK)
+
+        # Verificar conexion a BD
+        try:
+            from core.database import engine
+            from sqlalchemy import text
+            with engine.connect() as conn:
+                conn.execute(text("SELECT 1"))
+        except Exception as e:
+            QMessageBox.critical(
+                None, "Error de Conexion",
+                f"No se pudo conectar a la base de datos.\n\n"
+                f"Verifica que PostgreSQL este corriendo y que el archivo .env\n"
+                f"tenga la configuracion correcta.\n\n"
+                f"Error: {str(e)[:200]}"
+            )
+            sys.exit(1)
 
         self._login_window = None
         self._main_window = None
@@ -51,6 +69,13 @@ class AppController:
 
 def main():
     logger.info("Iniciando Agilize Gestion")
+
+    # Iniciar PostgreSQL portable si existe
+    try:
+        from scripts.pg_launcher import start_postgres_if_needed
+        start_postgres_if_needed()
+    except Exception:
+        pass
 
     # Auto-migrar BD al iniciar
     try:

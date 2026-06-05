@@ -61,10 +61,10 @@ class InstaladorApp:
         self.var_tipo = tk.StringVar(value="servidor")
         tipo_frame = tk.Frame(form, bg="#1a1a1a")
         tipo_frame.grid(row=0, column=1, sticky="w", pady=5)
-        tk.Radiobutton(tipo_frame, text="Servidor (BD local)", variable=self.var_tipo,
+        tk.Radiobutton(tipo_frame, text="Servidor (BD incluida)", variable=self.var_tipo,
                        value="servidor", bg="#1a1a1a", fg="#F8F9FA", selectcolor="#2a2a2a",
                        command=self._on_tipo_change).pack(side="left")
-        tk.Radiobutton(tipo_frame, text="Cliente (BD remota)", variable=self.var_tipo,
+        tk.Radiobutton(tipo_frame, text="Cliente (conectar a servidor)", variable=self.var_tipo,
                        value="cliente", bg="#1a1a1a", fg="#F8F9FA", selectcolor="#2a2a2a",
                        command=self._on_tipo_change).pack(side="left", padx=10)
 
@@ -116,9 +116,13 @@ class InstaladorApp:
         if self.var_tipo.get() == "cliente":
             self.entry_host.delete(0, "end")
             self.entry_host.insert(0, "192.168.1.100")
+            self.entry_pass.delete(0, "end")
+            self.entry_pass.insert(0, "agilize2025")
         else:
             self.entry_host.delete(0, "end")
             self.entry_host.insert(0, "localhost")
+            self.entry_pass.delete(0, "end")
+            self.entry_pass.insert(0, "agilize2025")
 
     def _browse_dir(self):
         d = filedialog.askdirectory()
@@ -127,17 +131,12 @@ class InstaladorApp:
             self.entry_dir.insert(0, d)
 
     def _start_install(self):
-        password = self.entry_pass.get()
-        if not password:
-            messagebox.showwarning("Error", "Ingresa la contrasena de PostgreSQL.")
-            return
-
         self.config = {
             "tipo": self.var_tipo.get(),
             "host": self.entry_host.get(),
             "port": self.entry_port.get(),
             "user": self.entry_user.get(),
-            "password": password,
+            "password": self.entry_pass.get() or "agilize2025",
             "install_dir": self.entry_dir.get(),
         }
         self._show_progress_page()
@@ -219,16 +218,25 @@ BCRYPT_ROUNDS=12
             self.progress["value"] = 50
 
             if self.config["tipo"] == "servidor":
-                # Paso 3: Crear BD
-                self._log("[3] Verificando base de datos...")
-                self._create_db_if_needed()
+                # Paso 3: PostgreSQL portable
+                self._log("[3] Configurando PostgreSQL...")
+                try:
+                    sys.path.insert(0, os.path.join(install_dir, "scripts"))
+                    from setup_postgres import setup_postgres, create_startup_task
+                    pg_info = setup_postgres(install_dir, self.config["password"], self._log)
+                    self.config["host"] = pg_info["host"]
+                    self.config["port"] = pg_info["port"]
+                    self.config["user"] = pg_info["user"]
+                    self.config["password"] = pg_info["password"]
+                    create_startup_task(install_dir)
+                    self._log("[OK] PostgreSQL configurado e iniciado")
+                except Exception as e:
+                    self._log(f"[WARN] PostgreSQL portable: {e}")
+                    self._log("[INFO] Asegurate de tener PostgreSQL instalado")
                 self.progress["value"] = 70
 
                 # Paso 4: Migraciones
-                self._log("[4] Ejecutando migraciones...")
-                exe_path = os.path.join(install_dir, "AgilizeGestion.exe")
-                # Las migraciones se ejecutan al iniciar la app por primera vez
-                self._log("[OK] Se aplicaran al iniciar")
+                self._log("[4] Migraciones se aplicaran al iniciar la app")
                 self.progress["value"] = 85
 
             # Paso final: Acceso directo
