@@ -10,6 +10,7 @@ from datetime import date
 from ui.components.data_table import DataTable
 from modulos.empleados.views.editar_asistencia_dialog import EditarAsistenciaDialog
 from modulos.empleados.views.registro_manual_dialog import RegistroManualDialog
+from modulos.empleados.views.calendario_dialog import CalendarioDialog
 from services.asistencia_service import asistencia_service
 from services.permiso_ausencia_service import permiso_ausencia_service
 from services.empleado_service import empleado_service
@@ -81,6 +82,15 @@ class AsistenciaView(QWidget):
         self.filtro_orden.currentIndexChanged.connect(self._cargar_lista)
         filtros.addWidget(self.filtro_orden)
 
+        filtros.addWidget(QLabel("Estado:"))
+        self.filtro_estado = QComboBox()
+        self.filtro_estado.setMinimumHeight(32)
+        self.filtro_estado.addItem("Todos", "todos")
+        self.filtro_estado.addItem("Incompletos", "incompleto")
+        self.filtro_estado.addItem("Completos", "completo")
+        self.filtro_estado.currentIndexChanged.connect(self._cargar_lista)
+        filtros.addWidget(self.filtro_estado)
+
         filtros.addStretch()
         layout.addLayout(filtros)
 
@@ -96,6 +106,12 @@ class AsistenciaView(QWidget):
         bottom = QHBoxLayout()
         bottom.setSpacing(8)
         bottom.addStretch()
+
+        btn_calendario = QPushButton("  Calendario")
+        btn_calendario.setCursor(Qt.PointingHandCursor)
+        btn_calendario.setStyleSheet("QPushButton { background-color: #8b5cf6; } QPushButton:hover { background-color: #7c3aed; }")
+        btn_calendario.clicked.connect(self._ver_calendario)
+        bottom.addWidget(btn_calendario)
 
         btn_manual = QPushButton("  Registro Manual")
         btn_manual.setCursor(Qt.PointingHandCursor)
@@ -134,6 +150,13 @@ class AsistenciaView(QWidget):
         emp_id_filtro = self.filtro_empleado.currentData()
         periodo_filtro = self.filtro_periodo.text().strip()
         self._registros = asistencia_service.listar(empleado_id=emp_id_filtro)
+
+        # Filtrar por estado
+        estado_filtro = self.filtro_estado.currentData() if hasattr(self, 'filtro_estado') else "todos"
+        if estado_filtro == "incompleto":
+            self._registros = [r for r in self._registros if getattr(r, 'incompleto', False)]
+        elif estado_filtro == "completo":
+            self._registros = [r for r in self._registros if not getattr(r, 'incompleto', False)]
         # Filtrar por periodo
         registros_filtrados = self._registros
         if periodo_filtro:
@@ -214,6 +237,10 @@ class AsistenciaView(QWidget):
             self._cargar_lista()
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Error al importar: {e}")
+
+    def _ver_calendario(self):
+        dialog = CalendarioDialog(parent=self)
+        dialog.exec()
 
     # === TAB PERMISOS ===
     def _build_permisos_tab(self) -> QWidget:
