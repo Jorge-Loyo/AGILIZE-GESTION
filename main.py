@@ -51,6 +51,18 @@ class AppController:
 
 def main():
     logger.info("Iniciando Agilize Gestion")
+
+    # Auto-migrar BD al iniciar
+    try:
+        from alembic.config import Config
+        from alembic import command
+        from core.config import BASE_DIR
+        alembic_cfg = Config(str(BASE_DIR / "alembic.ini"))
+        alembic_cfg.set_main_option("script_location", str(BASE_DIR / "alembic"))
+        command.upgrade(alembic_cfg, "head")
+    except Exception as e:
+        logger.warning(f"Auto-migracion: {e}")
+
     controller = AppController()
     controller.run()
     logger.info("Aplicacion cerrada")
