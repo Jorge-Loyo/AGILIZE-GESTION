@@ -56,7 +56,7 @@ echo [OK] PostgreSQL encontrado
 echo.
 echo [1/7] Creando directorio de instalacion...
 if not exist "%INSTALL_DIR%" mkdir "%INSTALL_DIR%"
-xcopy /E /I /Y /Q . "%INSTALL_DIR%" >nul 2>&1
+robocopy . "%INSTALL_DIR%" /E /NFL /NDL /NJH /NJS /NC /NS /NP /XD venv .git __pycache__ logs exports recibos >nul 2>&1
 echo [OK] Archivos copiados a %INSTALL_DIR%
 
 :: Crear entorno virtual
@@ -139,8 +139,12 @@ if %errorlevel% equ 0 (
 echo.
 echo Creando acceso directo en escritorio...
 set SHORTCUT=%USERPROFILE%\Desktop\Agilize Gestion.lnk
-powershell -Command "$ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut('%SHORTCUT%'); $s.TargetPath = '%INSTALL_DIR%\venv\Scripts\pythonw.exe'; $s.Arguments = 'main.py'; $s.WorkingDirectory = '%INSTALL_DIR%'; $s.IconLocation = '%INSTALL_DIR%\assets\logos\agilize_dev.jpg'; $s.Save()"
-echo [OK] Acceso directo creado en el escritorio.
+powershell -Command "$ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut('%SHORTCUT%'); $s.TargetPath = '%INSTALL_DIR%\venv\Scripts\pythonw.exe'; $s.Arguments = 'main.py'; $s.WorkingDirectory = '%INSTALL_DIR%'; $s.Save()" >nul 2>&1
+if exist "%SHORTCUT%" (
+    echo [OK] Acceso directo creado en el escritorio.
+) else (
+    echo [INFO] No se pudo crear el acceso directo. Ejecuta manualmente.
+)
 
 echo.
 echo ============================================
