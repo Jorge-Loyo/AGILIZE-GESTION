@@ -14,7 +14,7 @@ class DesinstaladorApp:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("Agilize Gestion - Desinstalar")
-        self.root.geometry("450, 300")
+        self.root.geometry("450x300")
         self.root.resizable(False, False)
         self.root.configure(bg="#1a1a1a")
 
