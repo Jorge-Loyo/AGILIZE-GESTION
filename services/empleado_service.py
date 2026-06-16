@@ -25,10 +25,9 @@ class EmpleadoService:
 
     def obtener(self, empleado_id: int) -> Empleado | None:
         with get_db() as db:
-            return (
-                db.query(Empleado)
-                .options(joinedload(Empleado.departamento), joinedload(Empleado.cargo), joinedload(Empleado.sucursal))
-                .get(empleado_id)
+            return db.get(
+                Empleado, empleado_id,
+                options=[joinedload(Empleado.departamento), joinedload(Empleado.cargo), joinedload(Empleado.sucursal)]
             )
 
     def crear(self, datos: dict) -> Empleado:
@@ -47,9 +46,24 @@ class EmpleadoService:
 
     def actualizar(self, empleado_id: int, datos: dict) -> Empleado | None:
         with get_db() as db:
-            empleado = db.query(Empleado).get(empleado_id)
+            empleado = db.get(Empleado, empleado_id)
             if not empleado:
                 return None
+            # Registrar cambios salariales en histórico
+            from models.historico_sueldo import HistoricoSueldo
+            from decimal import Decimal
+            campos_sueldo = ("valor_hora", "valor_hora_extra", "sueldo_mensual")
+            for campo in campos_sueldo:
+                if campo in datos:
+                    anterior = getattr(empleado, campo) or Decimal("0")
+                    nuevo = datos[campo] if datos[campo] else Decimal("0")
+                    if Decimal(str(anterior)) != Decimal(str(nuevo)):
+                        db.add(HistoricoSueldo(
+                            empleado_id=empleado_id,
+                            campo=campo,
+                            valor_anterior=anterior,
+                            valor_nuevo=nuevo,
+                        ))
             for key, value in datos.items():
                 setattr(empleado, key, value)
             db.flush()
@@ -61,7 +75,7 @@ class EmpleadoService:
     def eliminar(self, empleado_id: int) -> bool:
         """Baja lógica (no borra de la BD)."""
         with get_db() as db:
-            empleado = db.query(Empleado).get(empleado_id)
+            empleado = db.get(Empleado, empleado_id)
             if not empleado:
                 return False
             empleado.activo = False

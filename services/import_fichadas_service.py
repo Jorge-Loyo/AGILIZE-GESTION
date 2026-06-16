@@ -9,15 +9,15 @@ from models.empleado import Empleado
 from services.asistencia_service import asistencia_service
 
 
-def importar_fichadas(filepath: str) -> dict:
+def importar_fichadas(filepath: str, mapeo: dict = None) -> dict:
     """Importa fichadas. Detecta formato por extension."""
     ext = Path(filepath).suffix.lower()
     if ext == ".xls":
         return _importar_xls(filepath)
-    return _importar_xlsx(filepath)
+    return _importar_xlsx(filepath, mapeo=mapeo)
 
 
-def _importar_xlsx(filepath: str) -> dict:
+def _importar_xlsx(filepath: str, mapeo: dict = None) -> dict:
     """
     Formato XLSX manual: una hoja por empleado.
     Vincula por nombre de hoja contra nombre del empleado en BD.
@@ -53,8 +53,13 @@ def _importar_xlsx(filepath: str) -> dict:
                 resultados["errores"].append(f"{sheet_name}: nombre duplicado en BD, no se puede vincular sin legajo")
                 continue
             if not empleado:
-                resultados["no_encontrados"].append(sheet_name)
-                continue
+                # Intentar con mapeo manual
+                if mapeo and sheet_name in mapeo:
+                    emp_id = mapeo[sheet_name]
+                    empleado = next((e for e in empleados if e.id == emp_id), None)
+                if not empleado:
+                    resultados["no_encontrados"].append(sheet_name)
+                    continue
 
             for row in ws.iter_rows(min_row=8, max_col=4, values_only=True):
                 try:
@@ -240,3 +245,33 @@ def _parse_time(val) -> time | None:
             except ValueError:
                 continue
     return None
+
+
+def pre_scan_xlsx(filepath: str) -> list[str]:
+    """Escanea un XLSX y retorna lista de hojas no vinculadas a empleados."""
+    from openpyxl import load_workbook
+
+    wb = load_workbook(filepath, read_only=True, data_only=True)
+    hojas_ignorar = {"imprimir", "vacaciones aguinaldo", "hoja1", "hoja2", "hoja3", "hoja4", "hoja5", "sn"}
+    no_encontrados = []
+
+    with get_db() as db:
+        empleados = db.query(Empleado).filter(Empleado.activo == True).all()
+        nombre_map = {}
+        for emp in empleados:
+            key = emp.nombre.upper().strip()
+            if key in nombre_map:
+                nombre_map[key] = None
+            else:
+                nombre_map[key] = emp
+
+        for sheet_name in wb.sheetnames:
+            if sheet_name.strip().lower() in hojas_ignorar:
+                continue
+            nombre_hoja = sheet_name.strip().upper()
+            empleado = nombre_map.get(nombre_hoja)
+            if not empleado:
+                no_encontrados.append(sheet_name)
+
+    wb.close()
+    return no_encontrados

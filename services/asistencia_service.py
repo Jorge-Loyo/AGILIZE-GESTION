@@ -107,7 +107,7 @@ class AsistenciaService:
 
     def _get_jornada_empleado(self, empleado_id: int) -> Decimal:
         with get_db() as db:
-            emp = db.query(Empleado).get(empleado_id)
+            emp = db.get(Empleado, empleado_id)
             if emp and emp.horas_jornada:
                 return emp.horas_jornada
         return JORNADA_DEFAULT

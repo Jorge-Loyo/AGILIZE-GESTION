@@ -59,7 +59,7 @@ class CierreService:
     def reabrir_cierre(self, cierre_id: int, usuario_id: int):
         """Reabre un cierre por ID."""
         with get_db() as db:
-            cierre = db.query(CierreAsistencia).get(cierre_id)
+            cierre = db.get(CierreAsistencia, cierre_id)
             if not cierre:
                 return
             cierre.cerrado = False

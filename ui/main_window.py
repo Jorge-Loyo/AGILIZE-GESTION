@@ -3,9 +3,11 @@ from PySide6.QtWidgets import (
     QLabel, QStackedWidget,
 )
 from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QShortcut, QKeySequence
 from services.auth_service import auth_service
 from ui.theme_manager import theme_manager
 from ui.dashboard_view import DashboardView
+from ui.busqueda_global import BusquedaGlobalWidget
 
 
 MODULOS_CONFIG = {
@@ -24,8 +26,23 @@ class MainWindow(QMainWindow):
         self._build_ui()
 
     def _build_ui(self):
+        central = QWidget()
+        central_layout = QVBoxLayout(central)
+        central_layout.setContentsMargins(0, 0, 0, 0)
+        central_layout.setSpacing(0)
+
+        # Búsqueda global
+        self._busqueda = BusquedaGlobalWidget()
+        self._busqueda.empleado_selected.connect(self._on_busqueda_empleado)
+        central_layout.addWidget(self._busqueda)
+
         self.stack = QStackedWidget()
-        self.setCentralWidget(self.stack)
+        central_layout.addWidget(self.stack)
+        self.setCentralWidget(central)
+
+        # Shortcut Ctrl+K
+        shortcut = QShortcut(QKeySequence("Ctrl+K"), self)
+        shortcut.activated.connect(self._busqueda.toggle)
 
         # Página 0: Dashboard
         modulos_accesibles = auth_service.modulos_accesibles()
@@ -54,13 +71,13 @@ class MainWindow(QMainWindow):
 
     def _get_module_content(self, codigo: str) -> QWidget:
         if codigo == "empleados":
-            from modulos.empleados.views.rrhh_view import RRHHView
+            from modulos.rrhh.views.rrhh_view import RRHHView
             view = RRHHView()
             view.volver_dashboard.connect(lambda: self.stack.setCurrentIndex(0))
             view.logout_signal.connect(self._logout)
             return view
         if codigo == "admin":
-            from modulos.admin.views.config_global_view import ConfigGlobalView
+            from modulos.configuracion.views.config_global_view import ConfigGlobalView
             view = ConfigGlobalView()
             view.volver_dashboard.connect(lambda: self.stack.setCurrentIndex(0))
             view.logout_signal.connect(self._logout)
@@ -79,6 +96,12 @@ class MainWindow(QMainWindow):
     def _logout(self):
         auth_service.logout()
         self.logout_signal.emit()
+
+    def _on_busqueda_empleado(self, empleado_id: int):
+        """Abre el detalle del empleado desde la búsqueda global."""
+        from modulos.rrhh.views.detalle_empleado_dialog import EmpleadoDetalleDialog
+        dialog = EmpleadoDetalleDialog(empleado_id, parent=self)
+        dialog.exec()
 
     def closeEvent(self, event):
         if auth_service.current_user:

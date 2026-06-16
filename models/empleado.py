@@ -52,6 +52,7 @@ class Empleado(Base, TimestampMixin):
     dias_laborales: Mapped[str] = mapped_column(String(50), default="lun,mar,mie,jue,vie")  # dias separados por coma
     hora_entrada: Mapped[str] = mapped_column(String(5), default="08:00")
     hora_salida: Mapped[str] = mapped_column(String(5), default="17:00")
+    tipo_liquidacion: Mapped[str] = mapped_column(String(20), default="por_hora")  # por_hora / mensual
     observaciones: Mapped[str] = mapped_column(Text, default="")
 
     departamento = relationship("Departamento", back_populates="empleados")

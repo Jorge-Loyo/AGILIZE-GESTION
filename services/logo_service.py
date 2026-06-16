@@ -2,6 +2,14 @@ from pathlib import Path
 from core.config import BASE_DIR
 
 DEFAULT_LOGO = str(BASE_DIR / "assets" / "logos" / "agilize_dev.jpg")
+APP_ICON = str(BASE_DIR / "assets" / "logos" / "app_icon.ico")
+
+
+def get_app_icon_path() -> str:
+    """Retorna el path del icono .ico de la app (para ventana y barra de tareas)."""
+    if Path(APP_ICON).exists():
+        return APP_ICON
+    return get_dev_logo_path()
 
 
 def get_dev_logo_path() -> str:

@@ -15,11 +15,11 @@ class AdelantoService:
                 query = query.filter(Adelanto.empleado_id == empleado_id)
             return query.order_by(Adelanto.fecha.desc()).all()
 
-    def crear(self, empleado_id: int, monto: Decimal, cuotas: int, motivo: str) -> Adelanto:
+    def crear(self, empleado_id: int, monto: Decimal, cuotas: int, motivo: str, fecha: date = None, periodo: str = None) -> Adelanto:
         with get_db() as db:
             adelanto = Adelanto(
                 empleado_id=empleado_id,
-                fecha=date.today(),
+                fecha=fecha or date.today(),
                 monto=monto,
                 cuotas=max(cuotas, 1),
                 cuotas_descontadas=0,
@@ -81,7 +81,7 @@ class AdelantoService:
             horas_normales = sum(r.horas_normales for r in registros)
             horas_extra = sum(r.horas_extra for r in registros)
 
-            emp = db.query(Empleado).get(empleado_id)
+            emp = db.get(Empleado, empleado_id)
             valor_hora = emp.valor_hora if emp and emp.valor_hora else Decimal("0")
 
             monto_generado = (horas_normales + horas_extra) * valor_hora
@@ -98,7 +98,7 @@ class AdelantoService:
 
     def eliminar(self, adelanto_id: int) -> bool:
         with get_db() as db:
-            adelanto = db.query(Adelanto).get(adelanto_id)
+            adelanto = db.get(Adelanto, adelanto_id)
             if not adelanto:
                 return False
             db.delete(adelanto)

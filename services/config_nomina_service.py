@@ -6,7 +6,8 @@ DEFAULTS = {
     "mult_hora_extra": (Decimal("1.50"), "Multiplicador hora extra (ej: 1.50 = 50% mas)"),
     "mult_hora_sabado": (Decimal("1.50"), "Multiplicador hora sabado"),
     "mult_hora_domingo": (Decimal("2.00"), "Multiplicador hora domingo"),
-    "mult_hora_feriado": (Decimal("2.00"), "Multiplicador hora feriado"),
+    "mult_hora_feriado": (Decimal("2.00"), "Multiplicador hora feriado trabajado"),
+    "mult_feriado_no_trabajado": (Decimal("1.00"), "Multiplicador feriado no trabajado"),
 }
 
 

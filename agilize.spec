@@ -57,7 +57,7 @@ exe = EXE(
     strip=False,
     upx=True,
     console=False,
-    icon='assets/logos/agilize_dev.jpg',
+    icon='assets/logos/app_icon.ico',
 )
 
 coll = COLLECT(

@@ -8,7 +8,14 @@ class AppController:
         from PySide6.QtGui import QIcon
         from core.config import settings
         from ui.theme_manager import theme_manager
-        from services.logo_service import get_dev_logo_path
+        from services.logo_service import get_app_icon_path
+
+        # Windows: forzar que el icono se muestre en la barra de tareas
+        try:
+            import ctypes
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('agilize.gestion.app')
+        except Exception:
+            pass
 
         self.app = QApplication(sys.argv)
         self.app.setApplicationName(settings.APP_NAME)
@@ -16,7 +23,7 @@ class AppController:
         self.app.setQuitOnLastWindowClosed(False)
 
         # Icono de la aplicacion
-        logo = get_dev_logo_path()
+        logo = get_app_icon_path()
         if logo:
             self.app.setWindowIcon(QIcon(logo))
 

@@ -23,6 +23,9 @@ from models.config_nomina import ConfigNomina  # noqa: F401
 from models.permiso_empleado import TipoPermiso, PermisoEmpleado, Ausencia  # noqa: F401
 from models.empresa import DatosEmpresa  # noqa: F401
 from models.sucursal import Sucursal  # noqa: F401
+from models.historico_sueldo import HistoricoSueldo  # noqa: F401
+from models.vacaciones import Vacaciones  # noqa: F401
+from models.aprobacion_extras import AprobacionExtras  # noqa: F401
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)

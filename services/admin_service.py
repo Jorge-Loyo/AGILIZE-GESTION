@@ -21,7 +21,7 @@ class AdminService:
 
     def actualizar_usuario(self, usuario_id: int, datos: dict) -> Usuario | None:
         with get_db() as db:
-            usuario = db.query(Usuario).get(usuario_id)
+            usuario = db.get(Usuario, usuario_id)
             if not usuario:
                 return None
             if "password" in datos:
@@ -36,7 +36,7 @@ class AdminService:
 
     def desactivar_usuario(self, usuario_id: int) -> bool:
         with get_db() as db:
-            usuario = db.query(Usuario).get(usuario_id)
+            usuario = db.get(Usuario, usuario_id)
             if not usuario:
                 return False
             usuario.activo = not usuario.activo

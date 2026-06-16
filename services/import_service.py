@@ -120,6 +120,19 @@ def importar_empleados(filepath: str) -> dict:
                 valor_hora = _parse_numero(datos.get("valor_hora"))
                 sueldo_mensual = _parse_numero(datos.get("sueldo_mensual"))
 
+                # Jornada por defecto desde config
+                from services.empresa_service import empresa_service
+                default_entrada = empresa_service.obtener("jornada_entrada") or "08:00"
+                default_salida = empresa_service.obtener("jornada_salida") or "17:00"
+
+                # Campos opcionales del Excel
+                tipo_liq = str(datos.get("tipo_liquidacion", "") or "").strip().lower()
+                if tipo_liq not in ("por_hora", "mensual"):
+                    tipo_liq = "por_hora"
+                hora_ent = str(datos.get("hora_entrada", "") or "").strip() or default_entrada
+                hora_sal = str(datos.get("hora_salida", "") or "").strip() or default_salida
+                dias_lab = str(datos.get("dias_laborales", "") or "").strip() or "lun,mar,mie,jue,vie"
+
                 empleado = Empleado(
                     legajo=legajo,
                     apellido=apellido,
@@ -136,6 +149,10 @@ def importar_empleados(filepath: str) -> dict:
                     cargo_id=cargo_id,
                     valor_hora=valor_hora or 0,
                     sueldo_mensual=sueldo_mensual or 0,
+                    tipo_liquidacion=tipo_liq,
+                    hora_entrada=hora_ent,
+                    hora_salida=hora_sal,
+                    dias_laborales=dias_lab,
                 )
                 db.add(empleado)
                 resultados["importados"] += 1
@@ -150,15 +167,16 @@ def importar_empleados(filepath: str) -> dict:
 def generar_plantilla(filepath: str):
     """Genera un Excel plantilla con los headers esperados."""
     from openpyxl import Workbook
-    from openpyxl.styles import Font, PatternFill
+    from openpyxl.styles import Font, PatternFill, Alignment
 
     wb = Workbook()
     ws = wb.active
     ws.title = "Empleados"
 
-    headers = ["ID", "Legajo", "Apellido", "Nombre", "DNI", "CUIL", "Email", "Telefono",
+    headers = ["Legajo", "Apellido", "Nombre", "DNI", "CUIL", "Email", "Telefono",
                "Direccion", "Fecha_Nacimiento", "Fecha_Ingreso",
-               "Departamento", "Cargo", "Valor_Hora", "Sueldo_Mensual"]
+               "Departamento", "Cargo", "Valor_Hora", "Sueldo_Mensual",
+               "Tipo_Liquidacion", "Hora_Entrada", "Hora_Salida", "Dias_Laborales"]
 
     header_font = Font(bold=True, color="FFFFFF")
     header_fill = PatternFill(start_color="D4AF37", end_color="D4AF37", fill_type="solid")
@@ -167,11 +185,17 @@ def generar_plantilla(filepath: str):
         cell = ws.cell(1, col, h)
         cell.font = header_font
         cell.fill = header_fill
+        cell.alignment = Alignment(horizontal="center")
 
-    # Ejemplo
-    ws.append(["", "EMP-0001", "Perez", "Juan", "12345678", "20-12345678-9", "juan@mail.com",
+    # Ejemplos
+    ws.append(["1", "Perez", "Juan", "12345678", "20-12345678-9", "juan@mail.com",
                "1155551234", "Calle 123", "15/03/1990", "01/06/2024",
-               "Administracion", "Analista", "2500", "450000"])
+               "Administracion", "Analista", "2500", "450000",
+               "por_hora", "08:00", "17:00", "lun,mar,mie,jue,vie"])
+    ws.append(["2", "Gomez", "Maria", "87654321", "27-87654321-3", "",
+               "1166662345", "Av. Siempreviva 742", "20/08/1985", "15/03/2025",
+               "Ventas", "Supervisora", "", "500000",
+               "mensual", "09:00", "18:00", "lun,mar,mie,jue,vie"])
 
     for col in ws.columns:
         ws.column_dimensions[col[0].column_letter].width = 18
