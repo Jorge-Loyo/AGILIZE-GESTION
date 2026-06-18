@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QFrame,
     QLineEdit, QPushButton, QLabel, QTabWidget, QFileDialog, QGroupBox,
-    QMessageBox, QStackedWidget, QSpacerItem, QSizePolicy,
+    QMessageBox, QStackedWidget, QSpacerItem, QSizePolicy, QScrollArea,
 )
 from PySide6.QtCore import Qt, Signal, QSize
 from PySide6.QtGui import QPixmap
@@ -363,27 +363,33 @@ class ConfigGlobalView(QWidget):
 
     # === DESARROLLADOR ===
     def _build_dev_page(self) -> QWidget:
+        # Contenedor con scroll
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.NoFrame)
+
         page = QWidget()
         layout = QVBoxLayout(page)
-        layout.setContentsMargins(32, 32, 32, 32)
-        layout.setSpacing(20)
+        layout.setContentsMargins(32, 24, 32, 24)
+        layout.setSpacing(16)
 
         title = QLabel("Desarrollador")
         title.setObjectName("title")
         layout.addWidget(title)
 
         datos = empresa_service.obtener_todos()
+        GRP_STYLE = "QGroupBox { font-weight: bold; font-size: 12px; padding-top: 12px; margin-top: 4px; }"
 
-        # Datos
+        # --- Datos empresa desarrolladora ---
         grp_info = QGroupBox("Datos de la Empresa Desarrolladora")
-        grp_info.setStyleSheet("QGroupBox { font-weight: bold; font-size: 13px; padding-top: 14px; margin-top: 6px; }")
+        grp_info.setStyleSheet(GRP_STYLE)
         form = QGridLayout(grp_info)
-        form.setSpacing(8)
+        form.setSpacing(6)
         form.setColumnStretch(1, 1)
         form.setColumnStretch(3, 1)
 
         campos_dev = [
-            ("Nombre Empresa:", "dev_nombre", 0, 0),
+            ("Nombre:", "dev_nombre", 0, 0),
             ("Email:", "dev_email", 0, 2),
             ("Web:", "dev_web", 1, 0),
             ("Telefono:", "dev_telefono", 1, 2),
@@ -394,98 +400,91 @@ class ConfigGlobalView(QWidget):
         for label, clave, row, col in campos_dev:
             form.addWidget(QLabel(label), row, col)
             inp = QLineEdit()
-            inp.setMinimumHeight(32)
+            inp.setMinimumHeight(30)
             inp.setText(datos.get(clave, ""))
             form.addWidget(inp, row, col + 1)
             self._dev_inputs[clave] = inp
 
         layout.addWidget(grp_info)
 
-        # Logo desarrollador
+        # --- Logo desarrollador (compacto) ---
         grp_logo = QGroupBox("Logo del Desarrollador")
-        grp_logo.setStyleSheet("QGroupBox { font-weight: bold; font-size: 13px; padding-top: 14px; margin-top: 6px; }")
+        grp_logo.setStyleSheet(GRP_STYLE)
         logo_layout = QHBoxLayout(grp_logo)
+        logo_layout.setSpacing(12)
 
         self.lbl_dev_logo_preview = QLabel()
-        self.lbl_dev_logo_preview.setFixedSize(100, 100)
+        self.lbl_dev_logo_preview.setFixedSize(64, 64)
         self.lbl_dev_logo_preview.setAlignment(Qt.AlignCenter)
-        self.lbl_dev_logo_preview.setStyleSheet("border: 1px solid #333; border-radius: 10px; background-color: #1a1a1a;")
+        self.lbl_dev_logo_preview.setStyleSheet("border: 1px solid #333; border-radius: 8px; background-color: #1a1a1a;")
         dev_logo = datos.get("dev_logo_path", "")
         if dev_logo and Path(dev_logo).exists():
-            pixmap = QPixmap(dev_logo).scaled(90, 90, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            pixmap = QPixmap(dev_logo).scaled(56, 56, Qt.KeepAspectRatio, Qt.SmoothTransformation)
             self.lbl_dev_logo_preview.setPixmap(pixmap)
         logo_layout.addWidget(self.lbl_dev_logo_preview)
 
-        logo_info = QVBoxLayout()
-        logo_info.setSpacing(8)
-        self.lbl_dev_logo_path = QLabel(dev_logo if dev_logo else "Sin logo cargado")
+        self.lbl_dev_logo_path = QLabel(dev_logo if dev_logo else "Sin logo")
         self.lbl_dev_logo_path.setObjectName("subtitle")
         self.lbl_dev_logo_path.setWordWrap(True)
-        logo_info.addWidget(self.lbl_dev_logo_path)
-        btn_dev_logo = QPushButton("  Seleccionar imagen")
-        btn_dev_logo.setMinimumHeight(36)
+        logo_layout.addWidget(self.lbl_dev_logo_path, 1)
+
+        btn_dev_logo = QPushButton("Seleccionar")
+        btn_dev_logo.setMinimumHeight(30)
         btn_dev_logo.clicked.connect(self._seleccionar_dev_logo)
-        logo_info.addWidget(btn_dev_logo)
-        logo_info.addStretch()
-        logo_layout.addLayout(logo_info)
+        logo_layout.addWidget(btn_dev_logo)
 
         layout.addWidget(grp_logo)
 
-        # Guardar
-        btn = QPushButton("Guardar")
-        btn.setMinimumHeight(40)
-        btn.clicked.connect(self._guardar_dev)
-        layout.addWidget(btn)
+        # Boton guardar datos dev
+        btn_guardar = QPushButton("  Guardar datos desarrollador")
+        btn_guardar.setIcon(qta.icon("fa5s.save", color="#10b981"))
+        btn_guardar.setMinimumHeight(36)
+        btn_guardar.clicked.connect(self._guardar_dev)
+        layout.addWidget(btn_guardar)
 
-        # Boton reset
-        layout.addSpacing(30)
-
-        # Cambiar contrasena dev
+        # --- Contrasena de acceso ---
         grp_pwd = QGroupBox("Contrasena de Acceso")
-        grp_pwd.setStyleSheet("QGroupBox { font-weight: bold; font-size: 13px; padding-top: 14px; margin-top: 6px; }")
+        grp_pwd.setStyleSheet(GRP_STYLE)
         pwd_layout = QHBoxLayout(grp_pwd)
-        pwd_layout.addWidget(QLabel("Nueva contrasena:"))
+        pwd_layout.setSpacing(8)
+        pwd_layout.addWidget(QLabel("Nueva:"))
         self.input_dev_pwd = QLineEdit()
-        self.input_dev_pwd.setMinimumHeight(32)
+        self.input_dev_pwd.setMinimumHeight(30)
         self.input_dev_pwd.setEchoMode(QLineEdit.Password)
         self.input_dev_pwd.setPlaceholderText("Dejar vacio para no cambiar")
         pwd_layout.addWidget(self.input_dev_pwd)
         btn_pwd = QPushButton("Cambiar")
-        btn_pwd.setMinimumHeight(32)
+        btn_pwd.setMinimumHeight(30)
         btn_pwd.clicked.connect(self._cambiar_pwd_dev)
         pwd_layout.addWidget(btn_pwd)
         layout.addWidget(grp_pwd)
 
-        btn_reset = QPushButton("  Resetear Aplicacion (borrar datos)")
-        btn_reset.setMinimumHeight(40)
-        btn_reset.setCursor(Qt.PointingHandCursor)
-        btn_reset.setStyleSheet("QPushButton { background-color: #ef4444; } QPushButton:hover { background-color: #dc2626; }")
-        btn_reset.clicked.connect(self._resetear_app)
-        layout.addWidget(btn_reset)
-
-        # Backup
+        # --- Backup ---
         grp_backup = QGroupBox("Backup de Base de Datos")
-        grp_backup.setStyleSheet("QGroupBox { font-weight: bold; font-size: 13px; padding-top: 14px; margin-top: 6px; }")
+        grp_backup.setStyleSheet(GRP_STYLE)
         backup_layout = QVBoxLayout(grp_backup)
+        backup_layout.setSpacing(8)
 
         backup_btns = QHBoxLayout()
+        backup_btns.setSpacing(8)
+
         btn_crear_backup = QPushButton("  Crear Backup")
-        btn_crear_backup.setIcon(qta.icon("fa5s.download", color="#10b981"))
-        btn_crear_backup.setMinimumHeight(36)
+        btn_crear_backup.setIcon(qta.icon("fa5s.database", color="#10b981"))
+        btn_crear_backup.setMinimumHeight(34)
         btn_crear_backup.setCursor(Qt.PointingHandCursor)
         btn_crear_backup.clicked.connect(self._crear_backup)
         backup_btns.addWidget(btn_crear_backup)
 
         btn_exportar_backup = QPushButton("  Exportar a...")
         btn_exportar_backup.setIcon(qta.icon("fa5s.file-export", color="#D4AF37"))
-        btn_exportar_backup.setMinimumHeight(36)
+        btn_exportar_backup.setMinimumHeight(34)
         btn_exportar_backup.setCursor(Qt.PointingHandCursor)
         btn_exportar_backup.clicked.connect(self._exportar_backup)
         backup_btns.addWidget(btn_exportar_backup)
 
-        btn_restaurar_backup = QPushButton("  Restaurar Backup")
+        btn_restaurar_backup = QPushButton("  Restaurar")
         btn_restaurar_backup.setIcon(qta.icon("fa5s.upload", color="#3b82f6"))
-        btn_restaurar_backup.setMinimumHeight(36)
+        btn_restaurar_backup.setMinimumHeight(34)
         btn_restaurar_backup.setCursor(Qt.PointingHandCursor)
         btn_restaurar_backup.clicked.connect(self._restaurar_backup)
         backup_btns.addWidget(btn_restaurar_backup)
@@ -499,8 +498,23 @@ class ConfigGlobalView(QWidget):
 
         layout.addWidget(grp_backup)
 
-        layout.addStretch()
-        return page
+        # --- Zona peligrosa ---
+        grp_danger = QGroupBox("Zona Peligrosa")
+        grp_danger.setStyleSheet("QGroupBox { font-weight: bold; font-size: 12px; padding-top: 12px; margin-top: 4px; color: #ef4444; }")
+        danger_layout = QVBoxLayout(grp_danger)
+
+        btn_reset = QPushButton("  Resetear Aplicacion (borrar datos)")
+        btn_reset.setIcon(qta.icon("fa5s.exclamation-triangle", color="#ffffff"))
+        btn_reset.setMinimumHeight(36)
+        btn_reset.setCursor(Qt.PointingHandCursor)
+        btn_reset.setStyleSheet("QPushButton { background-color: #ef4444; } QPushButton:hover { background-color: #dc2626; }")
+        btn_reset.clicked.connect(self._resetear_app)
+        danger_layout.addWidget(btn_reset)
+
+        layout.addWidget(grp_danger)
+
+        scroll.setWidget(page)
+        return scroll
 
     def _seleccionar_dev_logo(self):
         filepath, _ = QFileDialog.getOpenFileName(
