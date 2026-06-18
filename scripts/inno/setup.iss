@@ -11,7 +11,7 @@ AppId={{A7B3C4D5-E6F7-8901-2345-6789ABCDEF01}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
-DefaultDirName={autopf}\AgilizeGestion
+DefaultDirName={sd}\AgilizeGestion
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
 OutputDir=..\..\dist
@@ -114,27 +114,45 @@ end;
 function InitializePostgreSQL(): Boolean;
 var
   ResultCode: Integer;
-  PgBin, DataDir, PgCtl, InitDB, Psql: String;
+  AppDir, PgBin, DataDir, PgCtl, InitDB, Psql: String;
   HbaContent, ConfContent: String;
+  CmdParams: String;
 begin
   Result := True;
-  PgBin := ExpandConstant('{app}\pgsql\bin');
-  DataDir := ExpandConstant('{app}\pgdata');
+  AppDir := ExpandConstant('{app}');
+  PgBin := AppDir + '\pgsql\bin';
+  DataDir := AppDir + '\pgdata';
   PgCtl := PgBin + '\pg_ctl.exe';
   InitDB := PgBin + '\initdb.exe';
   Psql := PgBin + '\psql.exe';
 
+  // Crear pgdata si no existe
+  if not DirExists(DataDir) then
+    ForceDirectories(DataDir);
+
   if not FileExists(DataDir + '\PG_VERSION') then
   begin
     WizardForm.StatusLabel.Caption := 'Inicializando base de datos...';
-    Exec(InitDB, '-D "' + DataDir + '" -U postgres -E UTF8 --locale=C',
-         '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+    // Eliminar contenido de pgdata si quedo basura
+    DelTree(DataDir, True, True, True);
+    ForceDirectories(DataDir);
+
+    // Ejecutar initdb via cmd para manejar mejor las rutas con espacios
+    CmdParams := '/c ""' + InitDB + '" -D "' + DataDir + '" -U postgres -E UTF8 --locale=C"';
+    Exec('cmd.exe', CmdParams, AppDir, SW_HIDE, ewWaitUntilTerminated, ResultCode);
     if ResultCode <> 0 then
     begin
-      Result := False;
-      Exit;
+      // Segundo intento sin --locale
+      CmdParams := '/c ""' + InitDB + '" -D "' + DataDir + '" -U postgres -E UTF8"';
+      Exec('cmd.exe', CmdParams, AppDir, SW_HIDE, ewWaitUntilTerminated, ResultCode);
+      if ResultCode <> 0 then
+      begin
+        Result := False;
+        Exit;
+      end;
     end;
 
+    // Configurar para red local
     HbaContent := CRLF + '# Red local - Agilize Gestion' + CRLF +
       'host all all 0.0.0.0/0 md5' + CRLF +
       'host all all ::0/0 md5' + CRLF;
@@ -146,19 +164,23 @@ begin
     SaveStringToFile(DataDir + '\postgresql.conf', ConfContent, True);
   end;
 
+  // Iniciar PostgreSQL via cmd
   WizardForm.StatusLabel.Caption := 'Iniciando PostgreSQL...';
-  Exec(PgCtl, 'start -D "' + DataDir + '" -w -o "-p 5432"',
-       '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  CmdParams := '/c ""' + PgCtl + '" start -D "' + DataDir + '" -w -o "-p 5432""';
+  Exec('cmd.exe', CmdParams, AppDir, SW_HIDE, ewWaitUntilTerminated, ResultCode);
 
-  Sleep(2000);
+  // Esperar a que inicie
+  Sleep(3000);
 
+  // Setear password
   WizardForm.StatusLabel.Caption := 'Configurando password...';
-  Exec(Psql, '-U postgres -p 5432 -c "ALTER USER postgres PASSWORD ''' + DBPassword + ''';"',
-       '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  CmdParams := '/c ""' + Psql + '" -U postgres -p 5432 -c "ALTER USER postgres PASSWORD ''''' + DBPassword + ''''';""';
+  Exec('cmd.exe', CmdParams, AppDir, SW_HIDE, ewWaitUntilTerminated, ResultCode);
 
+  // Crear base de datos
   WizardForm.StatusLabel.Caption := 'Creando base de datos...';
-  Exec(Psql, '-U postgres -p 5432 -c "CREATE DATABASE agilize_gestion;"',
-       '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  CmdParams := '/c ""' + Psql + '" -U postgres -p 5432 -c "CREATE DATABASE agilize_gestion;""';
+  Exec('cmd.exe', CmdParams, AppDir, SW_HIDE, ewWaitUntilTerminated, ResultCode);
 end;
 
 procedure CreateEnvFile();
