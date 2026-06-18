@@ -354,7 +354,7 @@ class InstaladorApp:
             f"SECRET_KEY=agilize_{os.urandom(8).hex()}\n"
             f"BCRYPT_ROUNDS=12\n"
         )
-        with open(os.path.join(install_dir, ".env"), "w") as f:
+        with open(os.path.join(install_dir, ".env"), "w", encoding="utf-8") as f:
             f.write(env_content)
 
     def _find_system_postgres(self):

@@ -7,11 +7,21 @@ import sys
 def _get_base_dir() -> Path:
     """Retorna el directorio base tanto en desarrollo como compilado."""
     if getattr(sys, 'frozen', False):
-        # Ejecutando como .exe (PyInstaller)
         return Path(sys.executable).parent
     else:
-        # Ejecutando como script Python
         return Path(__file__).resolve().parent.parent
+
+
+def _load_env_safe(env_path: Path):
+    """Carga .env intentando multiples encodings."""
+    for enc in ("utf-8", "utf-8-sig", "utf-16", "latin-1"):
+        try:
+            load_dotenv(env_path, encoding=enc)
+            return
+        except (UnicodeDecodeError, UnicodeError):
+            continue
+    # Ultimo intento sin encoding especifico
+    load_dotenv(env_path)
 
 
 BASE_DIR = _get_base_dir()
@@ -19,12 +29,11 @@ BASE_DIR = _get_base_dir()
 # Cargar .env desde el directorio de la app
 env_path = BASE_DIR / ".env"
 if env_path.exists():
-    load_dotenv(env_path)
+    _load_env_safe(env_path)
 else:
-    # Buscar en el directorio de trabajo actual
     cwd_env = Path.cwd() / ".env"
     if cwd_env.exists():
-        load_dotenv(cwd_env)
+        _load_env_safe(cwd_env)
 
 
 class Settings:
