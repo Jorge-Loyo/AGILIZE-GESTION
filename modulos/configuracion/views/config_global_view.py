@@ -117,12 +117,12 @@ class ConfigGlobalView(QWidget):
         # Proteger Desarrollador con contrasena almacenada en BD
         if index < len(SUBMODULOS_CONFIG) and SUBMODULOS_CONFIG[index]["codigo"] == "desarrollador":
             from PySide6.QtWidgets import QInputDialog
-            pwd, ok = QInputDialog.getText(self, "Acceso Desarrollador", "Contrasena:", QLineEdit.Password)
-            if not ok:
-                return
             dev_pwd = empresa_service.obtener("dev_password")
             if not dev_pwd:
-                QMessageBox.warning(self, "Error", "No hay contrasena configurada. Contacta al desarrollador.")
+                # Si no hay contrasena configurada, usar la por defecto
+                dev_pwd = "agilize2025"
+            pwd, ok = QInputDialog.getText(self, "Acceso Desarrollador", "Contrasena:", QLineEdit.Password)
+            if not ok:
                 return
             if pwd != dev_pwd:
                 QMessageBox.warning(self, "Error", "Contrasena incorrecta.")

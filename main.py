@@ -131,6 +131,14 @@ def _run_seed():
             )
             db.add(master)
 
+        # Configurar password de desarrollador por defecto
+        try:
+            from services.empresa_service import empresa_service
+            if not empresa_service.obtener("dev_password"):
+                empresa_service.guardar("dev_password", "agilize2025")
+        except Exception:
+            pass
+
         logger.info("Seed completado: usuario master creado")
     except Exception as e:
         logger.error(f"Error en seed: {e}")
