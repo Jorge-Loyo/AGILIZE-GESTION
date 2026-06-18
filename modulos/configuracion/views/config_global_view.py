@@ -463,6 +463,42 @@ class ConfigGlobalView(QWidget):
         btn_reset.clicked.connect(self._resetear_app)
         layout.addWidget(btn_reset)
 
+        # Backup
+        grp_backup = QGroupBox("Backup de Base de Datos")
+        grp_backup.setStyleSheet("QGroupBox { font-weight: bold; font-size: 13px; padding-top: 14px; margin-top: 6px; }")
+        backup_layout = QVBoxLayout(grp_backup)
+
+        backup_btns = QHBoxLayout()
+        btn_crear_backup = QPushButton("  Crear Backup")
+        btn_crear_backup.setIcon(qta.icon("fa5s.download", color="#10b981"))
+        btn_crear_backup.setMinimumHeight(36)
+        btn_crear_backup.setCursor(Qt.PointingHandCursor)
+        btn_crear_backup.clicked.connect(self._crear_backup)
+        backup_btns.addWidget(btn_crear_backup)
+
+        btn_exportar_backup = QPushButton("  Exportar a...")
+        btn_exportar_backup.setIcon(qta.icon("fa5s.file-export", color="#D4AF37"))
+        btn_exportar_backup.setMinimumHeight(36)
+        btn_exportar_backup.setCursor(Qt.PointingHandCursor)
+        btn_exportar_backup.clicked.connect(self._exportar_backup)
+        backup_btns.addWidget(btn_exportar_backup)
+
+        btn_restaurar_backup = QPushButton("  Restaurar Backup")
+        btn_restaurar_backup.setIcon(qta.icon("fa5s.upload", color="#3b82f6"))
+        btn_restaurar_backup.setMinimumHeight(36)
+        btn_restaurar_backup.setCursor(Qt.PointingHandCursor)
+        btn_restaurar_backup.clicked.connect(self._restaurar_backup)
+        backup_btns.addWidget(btn_restaurar_backup)
+
+        backup_layout.addLayout(backup_btns)
+
+        self.lbl_backup_info = QLabel("")
+        self.lbl_backup_info.setObjectName("subtitle")
+        self.lbl_backup_info.setWordWrap(True)
+        backup_layout.addWidget(self.lbl_backup_info)
+
+        layout.addWidget(grp_backup)
+
         layout.addStretch()
         return page
 
@@ -522,6 +558,52 @@ class ConfigGlobalView(QWidget):
         empresa_service.guardar("dev_password", nueva)
         self.input_dev_pwd.clear()
         QMessageBox.information(self, "OK", "Contrasena de desarrollador actualizada.")
+
+    def _crear_backup(self):
+        try:
+            from services.backup_service import crear_backup
+            filepath = crear_backup()
+            self.lbl_backup_info.setText(f"Backup creado: {filepath}")
+            QMessageBox.information(self, "Backup", f"Backup creado exitosamente:\n\n{filepath}")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"No se pudo crear el backup:\n\n{str(e)}")
+
+    def _exportar_backup(self):
+        filepath, _ = QFileDialog.getSaveFileName(
+            self, "Guardar Backup", f"backup_agilize_{__import__('datetime').datetime.now().strftime('%Y%m%d')}.sql",
+            "SQL Files (*.sql);;Todos (*)"
+        )
+        if not filepath:
+            return
+        try:
+            from services.backup_service import crear_backup
+            result = crear_backup(destino=filepath)
+            self.lbl_backup_info.setText(f"Exportado: {result}")
+            QMessageBox.information(self, "Backup", f"Backup exportado a:\n\n{result}")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"No se pudo exportar:\n\n{str(e)}")
+
+    def _restaurar_backup(self):
+        filepath, _ = QFileDialog.getOpenFileName(
+            self, "Seleccionar Backup", "", "SQL Files (*.sql);;Todos (*)"
+        )
+        if not filepath:
+            return
+        resp = QMessageBox.warning(
+            self, "Restaurar Backup",
+            f"Se restaurara el backup:\n{filepath}\n\n"
+            "Esto puede sobrescribir datos actuales.\nContinuar?",
+            QMessageBox.Yes | QMessageBox.No,
+        )
+        if resp != QMessageBox.Yes:
+            return
+        try:
+            from services.backup_service import restaurar_backup
+            msg = restaurar_backup(filepath)
+            self.lbl_backup_info.setText(f"Restaurado: {filepath}")
+            QMessageBox.information(self, "Backup", msg)
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Error al restaurar:\n\n{str(e)}")
 
     def _resetear_app(self):
         from PySide6.QtWidgets import QMessageBox
