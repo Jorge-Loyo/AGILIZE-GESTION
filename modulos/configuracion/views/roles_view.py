@@ -71,10 +71,14 @@ class RolesView(QWidget):
         layout.addWidget(self.grp_permisos)
 
         # Boton guardar
-        btn_guardar = QPushButton("Guardar Permisos")
-        btn_guardar.setMinimumHeight(40)
+        btn_row = QHBoxLayout()
+        btn_row.addStretch()
+        btn_guardar = QPushButton("  Guardar Permisos")
+        btn_guardar.setMinimumHeight(36)
+        btn_guardar.setFixedWidth(180)
         btn_guardar.clicked.connect(self._guardar_permisos)
-        layout.addWidget(btn_guardar)
+        btn_row.addWidget(btn_guardar)
+        layout.addLayout(btn_row)
 
         layout.addStretch()
 
