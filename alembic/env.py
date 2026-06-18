@@ -4,7 +4,7 @@ from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 from alembic import context
 
-# Agregar raíz del proyecto al path
+# Agregar raiz del proyecto al path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from core.config import settings
@@ -31,7 +31,10 @@ config = context.config
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
 
 if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
+    try:
+        fileConfig(config.config_file_name, encoding="utf-8")
+    except Exception:
+        pass
 
 target_metadata = Base.metadata
 

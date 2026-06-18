@@ -89,8 +89,19 @@ def main():
         from alembic.config import Config
         from alembic import command
         from core.config import BASE_DIR
-        alembic_cfg = Config(str(BASE_DIR / "alembic.ini"))
+        import configparser
+
+        ini_path = str(BASE_DIR / "alembic.ini")
+        # Leer con encoding explicito para evitar errores en Windows
+        alembic_cfg = Config(ini_path)
+        alembic_cfg.config_file_name = ini_path
+        # Forzar re-lectura del ini con encoding correcto
+        alembic_cfg.file_config = configparser.ConfigParser()
+        with open(ini_path, "r", encoding="utf-8") as f:
+            alembic_cfg.file_config.read_file(f)
         alembic_cfg.set_main_option("script_location", str(BASE_DIR / "alembic"))
+        from core.config import settings
+        alembic_cfg.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
         command.upgrade(alembic_cfg, "head")
     except Exception as e:
         logger.warning(f"Auto-migracion: {e}")
