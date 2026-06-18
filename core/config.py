@@ -2,6 +2,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 import os
 import sys
+import io
 
 
 def _get_base_dir() -> Path:
@@ -13,15 +14,31 @@ def _get_base_dir() -> Path:
 
 
 def _load_env_safe(env_path: Path):
-    """Carga .env intentando multiples encodings."""
-    for enc in ("utf-8", "utf-8-sig", "utf-16", "latin-1"):
-        try:
-            load_dotenv(env_path, encoding=enc)
-            return
-        except (UnicodeDecodeError, UnicodeError):
-            continue
-    # Ultimo intento sin encoding especifico
-    load_dotenv(env_path)
+    """Carga .env manejando cualquier encoding de Windows."""
+    try:
+        # Leer como bytes para detectar encoding
+        raw = env_path.read_bytes()
+
+        # Detectar y convertir BOM UTF-16
+        if raw[:2] in (b'\xff\xfe', b'\xfe\xff'):
+            content = raw.decode('utf-16')
+        elif raw[:3] == b'\xef\xbb\xbf':
+            content = raw.decode('utf-8-sig')
+        else:
+            # Intentar UTF-8, si falla usar latin-1 (nunca falla)
+            try:
+                content = raw.decode('utf-8')
+            except UnicodeDecodeError:
+                content = raw.decode('latin-1')
+
+        # Reescribir el archivo como UTF-8 limpio para que no vuelva a fallar
+        env_path.write_text(content, encoding='utf-8')
+
+        # Cargar con dotenv
+        load_dotenv(env_path, encoding='utf-8')
+    except Exception:
+        # Ultimo recurso: cargar sin especificar encoding
+        load_dotenv(env_path)
 
 
 BASE_DIR = _get_base_dir()
@@ -53,7 +70,7 @@ class Settings:
 
     # Aplicacion
     APP_NAME = os.getenv("APP_NAME", "Agilize Gestion")
-    APP_VERSION = os.getenv("APP_VERSION", "1.1.0")
+    APP_VERSION = os.getenv("APP_VERSION", "2.1.0")
     SESSION_TIMEOUT = int(os.getenv("SESSION_TIMEOUT_MINUTES", "30"))
 
     # Seguridad
