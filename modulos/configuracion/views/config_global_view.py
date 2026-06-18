@@ -153,19 +153,26 @@ class ConfigGlobalView(QWidget):
 
     # === DATOS EMPRESA ===
     def _build_empresa_page(self) -> QWidget:
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.NoFrame)
+
         page = QWidget()
+        page.setMaximumWidth(750)
         layout = QVBoxLayout(page)
-        layout.setContentsMargins(32, 32, 32, 32)
-        layout.setSpacing(20)
+        layout.setContentsMargins(32, 24, 32, 24)
+        layout.setSpacing(14)
 
         title = QLabel("Datos de la Empresa")
         title.setObjectName("title")
         layout.addWidget(title)
 
+        GRP_STYLE = "QGroupBox { font-weight: bold; font-size: 12px; padding-top: 14px; margin-top: 4px; }"
+
         grp = QGroupBox("Informacion Legal")
-        grp.setStyleSheet("QGroupBox { font-weight: bold; font-size: 13px; padding-top: 14px; margin-top: 6px; }")
+        grp.setStyleSheet(GRP_STYLE)
         form = QGridLayout(grp)
-        form.setSpacing(8)
+        form.setSpacing(6)
         form.setColumnStretch(1, 1)
         form.setColumnStretch(3, 1)
 
@@ -186,38 +193,54 @@ class ConfigGlobalView(QWidget):
         datos = empresa_service.obtener_todos()
 
         for label, clave, row, col in campos:
-            form.addWidget(QLabel(label), row, col)
+            lbl = QLabel(label)
+            lbl.setStyleSheet("font-weight: normal; font-size: 11px; color: #aaa;")
+            form.addWidget(lbl, row, col)
             inp = QLineEdit()
-            inp.setMinimumHeight(32)
+            inp.setFixedHeight(28)
             inp.setText(datos.get(clave, ""))
             form.addWidget(inp, row, col + 1)
             self._empresa_inputs[clave] = inp
 
         layout.addWidget(grp)
 
-        btn = QPushButton("Guardar")
-        btn.setMinimumHeight(40)
+        # Boton guardar alineado a la derecha
+        save_row = QHBoxLayout()
+        save_row.addStretch()
+        btn = QPushButton("  Guardar")
+        btn.setIcon(qta.icon("fa5s.save", color="#10b981"))
+        btn.setFixedHeight(32)
+        btn.setFixedWidth(140)
+        btn.setCursor(Qt.PointingHandCursor)
         btn.clicked.connect(self._guardar_empresa)
-        layout.addWidget(btn)
+        save_row.addWidget(btn)
+        layout.addLayout(save_row)
 
         # Sucursales
         grp_suc = QGroupBox("Sucursales")
-        grp_suc.setStyleSheet("QGroupBox { font-weight: bold; font-size: 13px; padding-top: 14px; margin-top: 6px; }")
+        grp_suc.setStyleSheet(GRP_STYLE)
         suc_layout = QVBoxLayout(grp_suc)
+        suc_layout.setSpacing(8)
 
         suc_form = QHBoxLayout()
-        suc_form.setSpacing(8)
-        suc_form.addWidget(QLabel("Nombre:"))
+        suc_form.setSpacing(6)
+        lbl_n = QLabel("Nombre:")
+        lbl_n.setStyleSheet("font-size: 11px; color: #aaa;")
+        suc_form.addWidget(lbl_n)
         self.input_suc_nombre = QLineEdit()
-        self.input_suc_nombre.setMinimumHeight(32)
+        self.input_suc_nombre.setFixedHeight(28)
         self.input_suc_nombre.setPlaceholderText("Ej: Sucursal Centro")
         suc_form.addWidget(self.input_suc_nombre)
-        suc_form.addWidget(QLabel("Direccion:"))
+        lbl_d = QLabel("Direccion:")
+        lbl_d.setStyleSheet("font-size: 11px; color: #aaa;")
+        suc_form.addWidget(lbl_d)
         self.input_suc_dir = QLineEdit()
-        self.input_suc_dir.setMinimumHeight(32)
+        self.input_suc_dir.setFixedHeight(28)
         suc_form.addWidget(self.input_suc_dir)
         btn_suc = QPushButton("Agregar")
-        btn_suc.setMinimumHeight(32)
+        btn_suc.setFixedHeight(28)
+        btn_suc.setFixedWidth(80)
+        btn_suc.setCursor(Qt.PointingHandCursor)
         btn_suc.clicked.connect(self._agregar_sucursal)
         suc_form.addWidget(btn_suc)
         suc_layout.addLayout(suc_form)
@@ -231,14 +254,24 @@ class ConfigGlobalView(QWidget):
         self.tabla_sucursales.setAlternatingRowColors(True)
         self.tabla_sucursales.verticalHeader().setVisible(False)
         self.tabla_sucursales.setEditTriggers(QTableWidget.NoEditTriggers)
-        self.tabla_sucursales.setMaximumHeight(150)
+        self.tabla_sucursales.setMaximumHeight(130)
         suc_layout.addWidget(self.tabla_sucursales)
 
         layout.addWidget(grp_suc)
         self._cargar_sucursales()
 
         layout.addStretch()
-        return page
+
+        # Centrar
+        wrapper = QWidget()
+        wrapper_layout = QHBoxLayout(wrapper)
+        wrapper_layout.setContentsMargins(0, 0, 0, 0)
+        wrapper_layout.addStretch()
+        wrapper_layout.addWidget(page)
+        wrapper_layout.addStretch()
+
+        scroll.setWidget(wrapper)
+        return scroll
 
     def _cargar_sucursales(self):
         from PySide6.QtWidgets import QTableWidgetItem
@@ -276,24 +309,33 @@ class ConfigGlobalView(QWidget):
 
     # === VISUAL ===
     def _build_visual_page(self) -> QWidget:
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.NoFrame)
+
         page = QWidget()
+        page.setMaximumWidth(600)
         layout = QVBoxLayout(page)
-        layout.setContentsMargins(32, 32, 32, 32)
-        layout.setSpacing(20)
+        layout.setContentsMargins(32, 24, 32, 24)
+        layout.setSpacing(14)
 
         title = QLabel("Visual")
         title.setObjectName("title")
         layout.addWidget(title)
 
         datos = empresa_service.obtener_todos()
+        GRP_STYLE = "QGroupBox { font-weight: bold; font-size: 12px; padding-top: 14px; margin-top: 4px; }"
 
         # Nombre comercial
         grp_nombre = QGroupBox("Nombre Comercial")
-        grp_nombre.setStyleSheet("QGroupBox { font-weight: bold; font-size: 13px; padding-top: 14px; margin-top: 6px; }")
+        grp_nombre.setStyleSheet(GRP_STYLE)
         nombre_layout = QVBoxLayout(grp_nombre)
-        nombre_layout.addWidget(QLabel("Nombre o sobrenombre que se mostrara en la aplicacion."))
+        nombre_layout.setSpacing(6)
+        lbl_hint = QLabel("Nombre que se muestra en la aplicacion y recibos.")
+        lbl_hint.setStyleSheet("font-size: 11px; color: #888; font-weight: normal;")
+        nombre_layout.addWidget(lbl_hint)
         self.input_nombre_app = QLineEdit()
-        self.input_nombre_app.setMinimumHeight(36)
+        self.input_nombre_app.setFixedHeight(30)
         self.input_nombre_app.setPlaceholderText("Ej: Mi Empresa S.A.")
         self.input_nombre_app.setText(datos.get("nombre_app", "Agilize Gestion"))
         nombre_layout.addWidget(self.input_nombre_app)
@@ -301,29 +343,30 @@ class ConfigGlobalView(QWidget):
 
         # Logo
         grp_logo = QGroupBox("Logo de la Empresa")
-        grp_logo.setStyleSheet("QGroupBox { font-weight: bold; font-size: 13px; padding-top: 14px; margin-top: 6px; }")
+        grp_logo.setStyleSheet(GRP_STYLE)
         logo_layout = QHBoxLayout(grp_logo)
+        logo_layout.setSpacing(14)
 
-        # Preview
         self.lbl_logo_preview = QLabel()
-        self.lbl_logo_preview.setFixedSize(120, 120)
+        self.lbl_logo_preview.setFixedSize(80, 80)
         self.lbl_logo_preview.setAlignment(Qt.AlignCenter)
         self.lbl_logo_preview.setStyleSheet("border: 1px solid #333; border-radius: 10px; background-color: #1a1a1a;")
         logo_actual = datos.get("logo_path", "")
         if logo_actual and Path(logo_actual).exists():
-            pixmap = QPixmap(logo_actual).scaled(100, 100, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            pixmap = QPixmap(logo_actual).scaled(70, 70, Qt.KeepAspectRatio, Qt.SmoothTransformation)
             self.lbl_logo_preview.setPixmap(pixmap)
         logo_layout.addWidget(self.lbl_logo_preview)
 
-        # Info + boton
         logo_info = QVBoxLayout()
-        logo_info.setSpacing(8)
+        logo_info.setSpacing(6)
         self.lbl_logo_path = QLabel(logo_actual if logo_actual else "Sin logo cargado")
         self.lbl_logo_path.setObjectName("subtitle")
         self.lbl_logo_path.setWordWrap(True)
         logo_info.addWidget(self.lbl_logo_path)
         btn_logo = QPushButton("  Seleccionar imagen")
-        btn_logo.setMinimumHeight(36)
+        btn_logo.setFixedHeight(28)
+        btn_logo.setFixedWidth(160)
+        btn_logo.setCursor(Qt.PointingHandCursor)
         btn_logo.clicked.connect(self._seleccionar_logo)
         logo_info.addWidget(btn_logo)
         logo_info.addStretch()
@@ -331,13 +374,30 @@ class ConfigGlobalView(QWidget):
 
         layout.addWidget(grp_logo)
 
-        # Guardar
-        btn = QPushButton("Guardar")
-        btn.setMinimumHeight(40)
+        # Guardar alineado a la derecha
+        save_row = QHBoxLayout()
+        save_row.addStretch()
+        btn = QPushButton("  Guardar")
+        btn.setIcon(qta.icon("fa5s.save", color="#10b981"))
+        btn.setFixedHeight(32)
+        btn.setFixedWidth(140)
+        btn.setCursor(Qt.PointingHandCursor)
         btn.clicked.connect(self._guardar_visual)
-        layout.addWidget(btn)
+        save_row.addWidget(btn)
+        layout.addLayout(save_row)
+
         layout.addStretch()
-        return page
+
+        # Centrar
+        wrapper = QWidget()
+        wrapper_layout = QHBoxLayout(wrapper)
+        wrapper_layout.setContentsMargins(0, 0, 0, 0)
+        wrapper_layout.addStretch()
+        wrapper_layout.addWidget(page)
+        wrapper_layout.addStretch()
+
+        scroll.setWidget(wrapper)
+        return scroll
 
     def _seleccionar_logo(self):
         filepath, _ = QFileDialog.getOpenFileName(
