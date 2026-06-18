@@ -136,11 +136,31 @@ class LoginView(QWidget):
             else:
                 self._show_error(msg)
         except Exception as e:
-            self._show_error(f"Error de conexion: {str(e)[:50]}")
+            error_detail = str(e)
+            self._show_error(f"Error de conexion (clic para ver detalle)")
+            self._last_error_detail = error_detail
+            self.lbl_error.setCursor(Qt.PointingHandCursor)
+            self.lbl_error.mousePressEvent = lambda ev: self._show_error_dialog(error_detail)
 
     def _show_error(self, msg: str):
         self.lbl_error.setText(msg)
         self.lbl_error.show()
+
+    def _show_error_dialog(self, detail: str):
+        from PySide6.QtWidgets import QDialog, QTextEdit, QDialogButtonBox
+        dlg = QDialog(self)
+        dlg.setWindowTitle("Detalle del error")
+        dlg.setMinimumSize(500, 300)
+        lay = QVBoxLayout(dlg)
+        txt = QTextEdit()
+        txt.setPlainText(detail)
+        txt.setReadOnly(True)
+        txt.setStyleSheet("font-family: Consolas; font-size: 11px;")
+        lay.addWidget(txt)
+        btns = QDialogButtonBox(QDialogButtonBox.Ok)
+        btns.accepted.connect(dlg.accept)
+        lay.addWidget(btns)
+        dlg.exec()
 
     def closeEvent(self, event):
         from services.auth_service import auth_service

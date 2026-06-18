@@ -4,7 +4,7 @@ from core.logging_config import logger
 
 class AppController:
     def __init__(self):
-        from PySide6.QtWidgets import QApplication, QMessageBox
+        from PySide6.QtWidgets import QApplication, QMessageBox, QLabel, QVBoxLayout
         from PySide6.QtGui import QIcon
         from core.config import settings
         from ui.theme_manager import theme_manager
@@ -36,13 +36,25 @@ class AppController:
             with engine.connect() as conn:
                 conn.execute(text("SELECT 1"))
         except Exception as e:
-            QMessageBox.critical(
-                None, "Error de Conexion",
-                f"No se pudo conectar a la base de datos.\n\n"
-                f"Verifica que PostgreSQL este corriendo y que el archivo .env\n"
-                f"tenga la configuracion correcta.\n\n"
-                f"Error: {str(e)[:200]}"
-            )
+            from PySide6.QtWidgets import QDialog, QTextEdit, QDialogButtonBox
+            error_msg = str(e)
+            dlg = QDialog()
+            dlg.setWindowTitle("Error de Conexion - Agilize Gestion")
+            dlg.setMinimumSize(600, 350)
+            lay = QVBoxLayout(dlg)
+            lay.addWidget(QLabel(
+                "No se pudo conectar a la base de datos.\n"
+                "Verifica que PostgreSQL este corriendo.\n"
+            ))
+            txt = QTextEdit()
+            txt.setPlainText(error_msg)
+            txt.setReadOnly(True)
+            txt.setStyleSheet("font-family: Consolas; font-size: 11px;")
+            lay.addWidget(txt)
+            btns = QDialogButtonBox(QDialogButtonBox.Ok)
+            btns.accepted.connect(dlg.accept)
+            lay.addWidget(btns)
+            dlg.exec()
             sys.exit(1)
 
         self._login_window = None
