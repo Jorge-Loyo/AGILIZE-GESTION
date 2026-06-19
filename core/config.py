@@ -1,8 +1,6 @@
 from pathlib import Path
-from dotenv import load_dotenv
 import os
 import sys
-import io
 
 
 def _get_base_dir() -> Path:
@@ -13,44 +11,60 @@ def _get_base_dir() -> Path:
         return Path(__file__).resolve().parent.parent
 
 
-def _load_env_safe(env_path: Path):
-    """Carga .env manejando cualquier encoding de Windows."""
+def _parse_env_file(env_path: Path) -> dict:
+    """Lee y parsea un archivo .env manualmente, manejando cualquier encoding."""
+    result = {}
     try:
-        # Leer como bytes para detectar encoding
         raw = env_path.read_bytes()
 
-        # Detectar y convertir BOM UTF-16
+        # Detectar encoding
         if raw[:2] in (b'\xff\xfe', b'\xfe\xff'):
-            content = raw.decode('utf-16')
+            text = raw.decode('utf-16')
         elif raw[:3] == b'\xef\xbb\xbf':
-            content = raw.decode('utf-8-sig')
+            text = raw.decode('utf-8-sig')
         else:
-            # Intentar UTF-8, si falla usar latin-1 (nunca falla)
             try:
-                content = raw.decode('utf-8')
+                text = raw.decode('utf-8')
             except UnicodeDecodeError:
-                content = raw.decode('latin-1')
+                text = raw.decode('latin-1')
 
-        # Reescribir el archivo como UTF-8 limpio para que no vuelva a fallar
-        env_path.write_text(content, encoding='utf-8')
+        # Reescribir como UTF-8 limpio
+        try:
+            env_path.write_bytes(text.encode('utf-8'))
+        except Exception:
+            pass
 
-        # Cargar con dotenv
-        load_dotenv(env_path, encoding='utf-8')
+        # Parsear lineas
+        for line in text.splitlines():
+            line = line.strip()
+            if not line or line.startswith('#'):
+                continue
+            if '=' in line:
+                key, _, value = line.partition('=')
+                key = key.strip()
+                value = value.strip().strip('"').strip("'")
+                if key:
+                    result[key] = value
     except Exception:
-        # Ultimo recurso: cargar sin especificar encoding
-        load_dotenv(env_path)
+        pass
+    return result
 
 
 BASE_DIR = _get_base_dir()
 
-# Cargar .env desde el directorio de la app
+# Cargar .env
+_env_data = {}
 env_path = BASE_DIR / ".env"
 if env_path.exists():
-    _load_env_safe(env_path)
+    _env_data = _parse_env_file(env_path)
 else:
     cwd_env = Path.cwd() / ".env"
     if cwd_env.exists():
-        _load_env_safe(cwd_env)
+        _env_data = _parse_env_file(cwd_env)
+
+# Setear en os.environ para compatibilidad
+for k, v in _env_data.items():
+    os.environ.setdefault(k, v)
 
 
 class Settings:
