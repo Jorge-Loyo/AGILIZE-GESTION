@@ -138,12 +138,12 @@ begin
     ForceDirectories(DataDir);
 
     // Ejecutar initdb via cmd para manejar mejor las rutas con espacios
-    CmdParams := '/c ""' + InitDB + '" -D "' + DataDir + '" -U postgres -E UTF8 --locale=C"';
+    CmdParams := '/c "' + InitDB + '" -D "' + DataDir + '" -U postgres -E UTF8 --locale=C';
     Exec('cmd.exe', CmdParams, AppDir, SW_HIDE, ewWaitUntilTerminated, ResultCode);
     if ResultCode <> 0 then
     begin
       // Segundo intento sin --locale
-      CmdParams := '/c ""' + InitDB + '" -D "' + DataDir + '" -U postgres -E UTF8"';
+      CmdParams := '/c "' + InitDB + '" -D "' + DataDir + '" -U postgres -E UTF8';
       Exec('cmd.exe', CmdParams, AppDir, SW_HIDE, ewWaitUntilTerminated, ResultCode);
       if ResultCode <> 0 then
       begin
@@ -166,20 +166,20 @@ begin
 
   // Iniciar PostgreSQL via cmd
   WizardForm.StatusLabel.Caption := 'Iniciando PostgreSQL...';
-  CmdParams := '/c ""' + PgCtl + '" start -D "' + DataDir + '" -w -o "-p 5432""';
+  CmdParams := '/c "' + PgCtl + '" start -D "' + DataDir + '" -w -o "-p 5432"';
   Exec('cmd.exe', CmdParams, AppDir, SW_HIDE, ewWaitUntilTerminated, ResultCode);
 
-  // Esperar a que inicie
-  Sleep(3000);
+  // Esperar a que inicie completamente
+  Sleep(5000);
 
-  // Setear password
+  // Setear password (con timeout para que no se cuelgue)
   WizardForm.StatusLabel.Caption := 'Configurando password...';
-  CmdParams := '/c ""' + Psql + '" -U postgres -p 5432 -c "ALTER USER postgres PASSWORD ''''' + DBPassword + ''''';""';
+  CmdParams := '/c set PGPASSWORD=& "' + Psql + '" -U postgres -h localhost -p 5432 -w -c "ALTER USER postgres PASSWORD ''' + DBPassword + ''';"';
   Exec('cmd.exe', CmdParams, AppDir, SW_HIDE, ewWaitUntilTerminated, ResultCode);
 
   // Crear base de datos
   WizardForm.StatusLabel.Caption := 'Creando base de datos...';
-  CmdParams := '/c ""' + Psql + '" -U postgres -p 5432 -c "CREATE DATABASE agilize_gestion;""';
+  CmdParams := '/c set PGPASSWORD=& "' + Psql + '" -U postgres -h localhost -p 5432 -w -c "CREATE DATABASE agilize_gestion;"';
   Exec('cmd.exe', CmdParams, AppDir, SW_HIDE, ewWaitUntilTerminated, ResultCode);
 end;
 
@@ -187,6 +187,7 @@ procedure CreateEnvFile();
 var
   EnvContent: String;
   EnvPath: String;
+  EnvLines: TArrayOfString;
 begin
   ServerHost := HostPage.Values[0];
   ServerPort := HostPage.Values[1];
@@ -194,24 +195,27 @@ begin
 
   EnvPath := ExpandConstant('{app}\.env');
 
-  EnvContent :=
-    '# Base de Datos' + CRLF +
-    'DB_HOST=' + ServerHost + CRLF +
-    'DB_PORT=' + ServerPort + CRLF +
-    'DB_NAME=agilize_gestion' + CRLF +
-    'DB_USER=postgres' + CRLF +
-    'DB_PASSWORD=' + DBPassword + CRLF +
-    CRLF +
-    '# Aplicacion' + CRLF +
-    'APP_NAME=Agilize Gestion' + CRLF +
-    'APP_VERSION=2.1.0' + CRLF +
-    'SESSION_TIMEOUT_MINUTES=30' + CRLF +
-    CRLF +
-    '# Seguridad' + CRLF +
-    'SECRET_KEY=agilize_' + GetDateTimeString('yyyymmddhhnnss', '-', ':') + CRLF +
-    'BCRYPT_ROUNDS=12' + CRLF;
+  // Escribir linea por linea para asegurar encoding limpio
+  SetArrayLength(EnvLines, 14);
+  EnvLines[0] := '# Base de Datos';
+  EnvLines[1] := 'DB_HOST=' + ServerHost;
+  EnvLines[2] := 'DB_PORT=' + ServerPort;
+  EnvLines[3] := 'DB_NAME=agilize_gestion';
+  EnvLines[4] := 'DB_USER=postgres';
+  EnvLines[5] := 'DB_PASSWORD=' + DBPassword;
+  EnvLines[6] := '';
+  EnvLines[7] := '# Aplicacion';
+  EnvLines[8] := 'APP_NAME=Agilize Gestion';
+  EnvLines[9] := 'APP_VERSION=2.1.0';
+  EnvLines[10] := 'SESSION_TIMEOUT_MINUTES=30';
+  EnvLines[11] := '';
+  EnvLines[12] := '# Seguridad';
+  EnvLines[13] := 'SECRET_KEY=agilize_' + GetDateTimeString('yyyymmddhhnnss', '-', ':');
 
-  SaveStringToFile(EnvPath, EnvContent, False);
+  SaveStringsToUTF8File(EnvPath, EnvLines, False);
+
+  // Agregar BCRYPT_ROUNDS como linea adicional
+  SaveStringToFile(EnvPath, 'BCRYPT_ROUNDS=12' + Chr(13) + Chr(10), True);
 end;
 
 procedure CreateFirewallRule();
