@@ -34,11 +34,16 @@ Source: "..\..\dist\AgilizeGestion\{#MyAppExeName}"; DestDir: "{app}"; Flags: ig
 Source: "..\..\dist\AgilizeGestion\_internal\*"; DestDir: "{app}\_internal"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "..\..\dist\AgilizeGestion\.env.example"; DestDir: "{app}"; DestName: ".env.example"; Flags: ignoreversion
 Source: "..\..\scripts\pg_launcher.py"; DestDir: "{app}\scripts"; Flags: ignoreversion
+Source: "..\..\assets\logos\app_icon.ico"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
-Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
-Name: "{commondesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
+Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\app_icon.ico"
+Name: "{commondesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\app_icon.ico"
+Name: "{userappdata}\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\app_icon.ico"; Tasks: pintaskbar
 Name: "{group}\Desinstalar {#MyAppName}"; Filename: "{uninstallexe}"
+
+[Tasks]
+Name: "pintaskbar"; Description: "Anclar a la barra de tareas"; GroupDescription: "Accesos adicionales:"
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "Ejecutar Agilize Gestion"; Flags: nowait postinstall skipifsilent
