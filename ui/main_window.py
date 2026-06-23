@@ -12,6 +12,7 @@ from ui.busqueda_global import BusquedaGlobalWidget
 
 MODULOS_CONFIG = {
     "empleados": {"label": "RRHH", "icon": "fa5s.users"},
+    "herramientas": {"label": "Herramientas", "icon": "fa5s.toolbox"},
     "admin": {"label": "Configuracion", "icon": "fa5s.cog"},
 }
 
@@ -46,6 +47,9 @@ class MainWindow(QMainWindow):
 
         # Página 0: Dashboard
         modulos_accesibles = auth_service.modulos_accesibles()
+        # Herramientas siempre disponible para cualquier usuario con acceso
+        if "herramientas" not in modulos_accesibles:
+            modulos_accesibles.append("herramientas")
         modulos_data = []
         for codigo in modulos_accesibles:
             if codigo not in MODULOS_CONFIG:
@@ -73,6 +77,12 @@ class MainWindow(QMainWindow):
         if codigo == "empleados":
             from modulos.rrhh.views.rrhh_view import RRHHView
             view = RRHHView()
+            view.volver_dashboard.connect(lambda: self.stack.setCurrentIndex(0))
+            view.logout_signal.connect(self._logout)
+            return view
+        if codigo == "herramientas":
+            from modulos.herramientas.views.herramientas_view import HerramientasView
+            view = HerramientasView()
             view.volver_dashboard.connect(lambda: self.stack.setCurrentIndex(0))
             view.logout_signal.connect(self._logout)
             return view

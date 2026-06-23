@@ -19,22 +19,33 @@ cd AGILIZE-GESTION
 ## 2. Crear entorno virtual
 
 **Windows (cmd o PowerShell):**
+
 ```bash
 py -m venv venv
 venv\Scripts\activate
 ```
 
 **Windows (Git Bash / MINGW64):**
+
 ```bash
 py -m venv venv
 source venv/Scripts/activate
 ```
 
 **Linux/macOS:**
+
 ```bash
 python3 -m venv venv
 source venv/bin/activate
 ```
+
+# Usar servidor remoto
+
+cp .env.server .env
+
+# Usar local
+
+cp .env.local .env
 
 > **Nota:** En Windows el comando es `py` (no `python3`). Si `py` no funciona, usa la ruta completa: `C:\Users\TU_USUARIO\AppData\Local\Programs\Python\Python313\python.exe`
 
@@ -50,11 +61,13 @@ pip install qtawesome openpyxl reportlab Pillow
 Asegurate de tener PostgreSQL corriendo. Luego crea la base de datos:
 
 **Si tenes psql en PATH:**
+
 ```bash
 psql -U postgres -c "CREATE DATABASE agilize_gestion;"
 ```
 
 **Si NO tenes psql en PATH (Windows):**
+
 ```bash
 "C:/Program Files/PostgreSQL/16/bin/psql.exe" -U postgres -c "CREATE DATABASE agilize_gestion;"
 ```
@@ -68,11 +81,13 @@ psql -U postgres -c "CREATE DATABASE agilize_gestion;"
 Copiar el ejemplo y editar con tus datos:
 
 **Windows:**
+
 ```bash
 copy .env.example .env
 ```
 
 **Linux/macOS:**
+
 ```bash
 cp .env.example .env
 ```
@@ -97,16 +112,19 @@ BCRYPT_ROUNDS=12
 ## 6. Ejecutar migraciones
 
 **Windows (cmd o PowerShell):**
+
 ```bash
 venv\Scripts\alembic upgrade head
 ```
 
 **Windows (Git Bash / MINGW64):**
+
 ```bash
 venv/Scripts/alembic upgrade head
 ```
 
 **Linux/macOS:**
+
 ```bash
 venv/bin/alembic upgrade head
 ```
@@ -116,37 +134,44 @@ Si falla, la app creara las tablas automaticamente al iniciar.
 ## 7. Cargar datos iniciales (seed)
 
 **Windows (cmd o PowerShell):**
+
 ```bash
 venv\Scripts\python -m scripts.seed
 ```
 
 **Windows (Git Bash / MINGW64):**
+
 ```bash
 venv/Scripts/python -m scripts.seed
 ```
 
 **Linux/macOS:**
+
 ```bash
 venv/bin/python -m scripts.seed
 ```
 
 Esto crea:
+
 - Rol Administrador con todos los permisos
 - Usuario `admin` / `admin123`
 
 ## 8. Ejecutar la aplicacion
 
 **Windows (cmd o PowerShell):**
+
 ```bash
 venv\Scripts\python main.py
 ```
 
 **Windows (Git Bash / MINGW64):**
+
 ```bash
 venv/Scripts/python main.py
 ```
 
 **Linux/macOS:**
+
 ```bash
 venv/bin/python main.py
 ```
@@ -155,10 +180,10 @@ La app se abre y podes loguearte con `admin` / `admin123`.
 
 ## Credenciales
 
-| Usuario | Password | Nota |
-|---------|----------|------|
-| admin | admin123 | Creado por seed |
-| master | master2025 | Creado por instalador (solo en builds) |
+| Usuario | Password   | Nota                                   |
+| ------- | ---------- | -------------------------------------- |
+| admin   | admin123   | Creado por seed                        |
+| master  | master2025 | Creado por instalador (solo en builds) |
 
 ## Estructura del proyecto
 
@@ -182,18 +207,21 @@ La app se abre y podes loguearte con `admin` / `admin123`.
 ### Crear nueva migracion
 
 **Windows (cmd):**
+
 ```bash
 venv\Scripts\alembic revision --autogenerate -m "descripcion del cambio"
 venv\Scripts\alembic upgrade head
 ```
 
 **Windows (Git Bash):**
+
 ```bash
 venv/Scripts/alembic revision --autogenerate -m "descripcion del cambio"
 venv/Scripts/alembic upgrade head
 ```
 
 **Linux/macOS:**
+
 ```bash
 venv/bin/alembic revision --autogenerate -m "descripcion del cambio"
 venv/bin/alembic upgrade head
@@ -202,16 +230,19 @@ venv/bin/alembic upgrade head
 ### Correr tests
 
 **Windows (cmd):**
+
 ```bash
 venv\Scripts\pytest tests/ -v
 ```
 
 **Windows (Git Bash):**
+
 ```bash
 venv/Scripts/pytest tests/ -v
 ```
 
 **Linux/macOS:**
+
 ```bash
 venv/bin/pytest tests/ -v
 ```

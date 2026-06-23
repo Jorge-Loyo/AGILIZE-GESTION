@@ -15,6 +15,9 @@ python-dotenv>=1.0
 
 # Utilidades
 loguru>=0.7
+pandas>=2.0
+openpyxl>=3.1
+xlrd>=2.0
 
 # Build
 pyinstaller>=6.0

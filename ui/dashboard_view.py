@@ -11,6 +11,7 @@ from services.empresa_service import empresa_service
 
 ICONOS_MODULO = {
     "empleados": "fa5s.users",
+    "herramientas": "fa5s.toolbox",
     "admin": "fa5s.cog",
 }
 
