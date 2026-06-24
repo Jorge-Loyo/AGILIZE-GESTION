@@ -13,9 +13,13 @@ class ConceptoNomina(Base, TimestampMixin):
     codigo: Mapped[str] = mapped_column(String(20), unique=True)
     nombre: Mapped[str] = mapped_column(String(150))
     tipo: Mapped[str] = mapped_column(String(20))  # "haber" o "deduccion"
+    categoria: Mapped[str] = mapped_column(String(30), default="remunerativo")  # remunerativo, no_remunerativo, retencion
     calculo: Mapped[str] = mapped_column(String(20), default="porcentaje")  # "porcentaje", "fijo", "por_dia"
+    base_calculo: Mapped[str] = mapped_column(String(20), default="basico")  # basico, bruto, neto
     porcentaje: Mapped[Decimal | None] = mapped_column(Numeric(8, 4), nullable=True)
     monto_fijo: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
+    aplica_a: Mapped[str] = mapped_column(String(20), default="todos")  # todos, por_hora, mensual
+    orden: Mapped[int] = mapped_column(Integer, default=0)
     activo: Mapped[bool] = mapped_column(Boolean, default=True)
 
     detalles = relationship("LiquidacionDetalle", back_populates="concepto")
