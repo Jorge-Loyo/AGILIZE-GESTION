@@ -161,8 +161,14 @@ class FacturaVenta(Base, TimestampMixin):
     percepciones: Mapped[float] = mapped_column(Float, default=0.0)
     total: Mapped[float] = mapped_column(Float, default=0.0)
     estado: Mapped[str] = mapped_column(String(20), default="emitida")  # emitida, cobrada, anulada
-    cae: Mapped[str] = mapped_column(String(20), default="")  # Factura electronica
-    cae_vencimiento: Mapped[date] = mapped_column(Date, nullable=True)
+    # Campos fiscales (factura electronica)
+    estado_fiscal: Mapped[str] = mapped_column(String(20), default="pendiente")  # pendiente, enviado, aprobado, rechazado, no_aplica
+    codigo_autorizacion: Mapped[str] = mapped_column(String(50), default="")  # CAE (AR), UUID (VE/MX), etc
+    codigo_autorizacion_vto: Mapped[date] = mapped_column(Date, nullable=True)
+    codigo_qr: Mapped[str] = mapped_column(Text, default="")  # URL o datos del QR fiscal
+    cae: Mapped[str] = mapped_column(String(20), default="")  # legacy alias AR
+    cae_vencimiento: Mapped[date] = mapped_column(Date, nullable=True)  # legacy alias AR
+    fiscal_response: Mapped[str] = mapped_column(Text, default="")  # respuesta cruda del fisco (JSON)
     observaciones: Mapped[str] = mapped_column(Text, default="")
     usuario_id: Mapped[int] = mapped_column(ForeignKey("usuarios.id"), nullable=True)
 
