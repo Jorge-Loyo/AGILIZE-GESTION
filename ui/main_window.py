@@ -54,7 +54,7 @@ class MainWindow(QMainWindow):
         shortcut.activated.connect(self._busqueda.toggle)
 
         modulos_accesibles = auth_service.modulos_accesibles()
-        for mod in ["ventas", "compras", "facturador", "inventario", "cuentas", "finanzas", "reportes", "herramientas", "importador", "administrador", "conexiones"]:
+        for mod in ["compras", "inventario", "ventas", "facturador", "empleados", "cuentas", "finanzas", "reportes", "herramientas", "importador", "administrador", "conexiones", "admin"]:
             if mod not in modulos_accesibles:
                 modulos_accesibles.append(mod)
 
