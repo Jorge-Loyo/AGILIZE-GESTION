@@ -24,6 +24,7 @@ class FichajeView(QWidget):
 
         tabs = QTabWidget()
         tabs.addTab(self._build_fichaje(), "Fichar")
+        tabs.addTab(self._build_importar(), "Importar Fichadas")
         tabs.addTab(self._build_turnos(), "Turnos Laborales")
         tabs.addTab(self._build_fichajes_hoy(), "Fichajes del Dia")
         layout.addWidget(tabs)
@@ -119,6 +120,82 @@ class FichajeView(QWidget):
             self._tabla_turnos.setItem(i, 3, QTableWidgetItem(str(t.hora_salida)))
             self._tabla_turnos.setItem(i, 4, QTableWidgetItem("Si" if t.es_nocturno else "No"))
         return w
+
+    def _build_importar(self):
+        """Tab para importar fichadas desde Excel (XLS reloj o XLSX manual)."""
+        from PySide6.QtWidgets import QFileDialog
+        w = QWidget()
+        lay = QVBoxLayout(w)
+        lay.setContentsMargins(16, 16, 16, 16)
+        lay.setSpacing(12)
+
+        info = QLabel(
+            "Importar fichadas desde archivo Excel del reloj fichador (.XLS)\n"
+            "o desde archivo manual (.XLSX).\n\n"
+            "Formato XLS (reloj): vincula por legajo automaticamente.\n"
+            "Formato XLSX (manual): vincula por nombre de hoja."
+        )
+        info.setStyleSheet("font-size: 11px; color: #888;")
+        lay.addWidget(info)
+
+        row = QHBoxLayout()
+        btn_seleccionar = QPushButton("  Seleccionar Archivo")
+        btn_seleccionar.setIcon(qta.icon("fa5s.file-excel", color="#10b981"))
+        btn_seleccionar.setFixedHeight(34)
+        btn_seleccionar.clicked.connect(self._seleccionar_archivo_fichadas)
+        row.addWidget(btn_seleccionar)
+
+        self._lbl_archivo = QLabel("Ningun archivo seleccionado")
+        self._lbl_archivo.setStyleSheet("font-size: 11px; color: #888;")
+        row.addWidget(self._lbl_archivo)
+        row.addStretch()
+        lay.addLayout(row)
+
+        btn_importar = QPushButton("  Importar Fichadas")
+        btn_importar.setIcon(qta.icon("fa5s.upload", color="#0f0f0f"))
+        btn_importar.setFixedHeight(34)
+        btn_importar.clicked.connect(self._ejecutar_importacion)
+        lay.addWidget(btn_importar)
+
+        self._lbl_resultado_import = QLabel("")
+        self._lbl_resultado_import.setStyleSheet("font-size: 12px;")
+        lay.addWidget(self._lbl_resultado_import)
+
+        lay.addStretch()
+        self._archivo_fichadas = None
+        return w
+
+    def _seleccionar_archivo_fichadas(self):
+        from PySide6.QtWidgets import QFileDialog
+        path, _ = QFileDialog.getOpenFileName(
+            self, "Seleccionar archivo de fichadas", "", "Excel (*.xls *.xlsx)"
+        )
+        if path:
+            self._archivo_fichadas = path
+            import os
+            self._lbl_archivo.setText(os.path.basename(path))
+
+    def _ejecutar_importacion(self):
+        if not self._archivo_fichadas:
+            QMessageBox.warning(self, "Aviso", "Seleccione un archivo primero.")
+            return
+        try:
+            from services.rrhh.import_fichadas_service import importar_fichadas
+            resultado = importar_fichadas(self._archivo_fichadas)
+            msg = (
+                f"Importados: {resultado['importados']}\n"
+                f"No encontrados: {len(resultado.get('no_encontrados', []))}\n"
+                f"Errores: {len(resultado.get('errores', []))}"
+            )
+            self._lbl_resultado_import.setText(msg)
+            self._lbl_resultado_import.setStyleSheet("font-size: 12px; color: #10b981;")
+            if resultado.get('no_encontrados'):
+                msg += f"\n\nLegajos no encontrados:\n" + "\n".join(resultado['no_encontrados'][:10])
+            QMessageBox.information(self, "Importacion Completada", msg)
+        except Exception as e:
+            self._lbl_resultado_import.setText(f"Error: {e}")
+            self._lbl_resultado_import.setStyleSheet("font-size: 12px; color: #ef4444;")
+            QMessageBox.critical(self, "Error", str(e))
 
     def _build_fichajes_hoy(self):
         w = QWidget()
