@@ -5,8 +5,8 @@ sys.path.insert(0, '.')
 
 
 def test_rendimiento():
-    from services.cliente_service import cliente_service
-    from services.precios_venta_service import precios_venta_service
+    from services.clientes import cliente_service
+    from services.precios import precios_venta_service
     from services.ventas.riesgo_venta_service import riesgo_venta_service
     from services.ventas.reportes_venta_service import reportes_venta_service
 
@@ -49,8 +49,8 @@ def test_rendimiento():
 
 
 def test_seguridad():
-    from services.cliente_service import cliente_service
-    from services.precios_venta_service import precios_venta_service
+    from services.clientes import cliente_service
+    from services.precios import precios_venta_service
 
     print("\n" + "=" * 60)
     print("TESTS DE SEGURIDAD - SQL INJECTION")
@@ -91,9 +91,9 @@ def test_seguridad():
 
 
 def test_validaciones():
-    from services.cliente_service import cliente_service
+    from services.clientes import cliente_service
     from services.ventas.riesgo_venta_service import riesgo_venta_service
-    from services.precios_venta_service import precios_venta_service
+    from services.precios import precios_venta_service
 
     print("\n" + "=" * 60)
     print("TESTS DE VALIDACIONES - EDGE CASES")
@@ -164,9 +164,9 @@ def test_validaciones():
 
 
 def test_integridad():
-    from services.cliente_service import cliente_service
+    from services.clientes import cliente_service
     from services.ventas.riesgo_venta_service import riesgo_venta_service
-    from services.precios_venta_service import precios_venta_service
+    from services.precios import precios_venta_service
     from services.ventas.reportes_venta_service import reportes_venta_service
 
     print("\n" + "=" * 60)
@@ -209,8 +209,8 @@ def test_integridad():
 
 
 def test_overflow():
-    from services.cliente_service import cliente_service
-    from services.precios_venta_service import precios_venta_service
+    from services.clientes import cliente_service
+    from services.precios import precios_venta_service
 
     print("\n" + "=" * 60)
     print("TESTS DE SEGURIDAD - OVERFLOW / LIMITES")

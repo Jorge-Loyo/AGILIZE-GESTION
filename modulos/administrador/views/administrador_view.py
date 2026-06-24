@@ -154,7 +154,7 @@ class AdministradorView(QWidget):
         lay.addWidget(tabla)
 
         def cargar():
-            from services.inventario_service import inventario_service
+            from services.inventario import inventario_service
             cats = inventario_service.listar_categorias()
             tabla.setRowCount(len(cats))
             for i, c in enumerate(cats):
@@ -164,7 +164,7 @@ class AdministradorView(QWidget):
         def nueva():
             nombre, ok = QInputDialog.getText(page, "Nueva Categoria", "Nombre:")
             if ok and nombre.strip():
-                from services.inventario_service import inventario_service
+                from services.inventario import inventario_service
                 try:
                     inventario_service.crear_categoria(nombre.strip())
                     cargar()

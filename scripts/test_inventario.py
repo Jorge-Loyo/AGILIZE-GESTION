@@ -5,7 +5,7 @@ sys.path.insert(0, '.')
 
 
 def test_rendimiento():
-    from services.inventario_service import inventario_service
+    from services.inventario import inventario_service
     print("=" * 60)
     print("TESTS DE RENDIMIENTO - MODULO INVENTARIO")
     print("=" * 60)
@@ -49,7 +49,7 @@ def test_rendimiento():
 
 
 def test_seguridad():
-    from services.inventario_service import inventario_service
+    from services.inventario import inventario_service
     print("\n" + "=" * 60)
     print("TESTS DE SEGURIDAD - SQL INJECTION")
     print("=" * 60)
@@ -89,7 +89,7 @@ def test_seguridad():
 
 
 def test_validaciones():
-    from services.inventario_service import inventario_service
+    from services.inventario import inventario_service
     print("\n" + "=" * 60)
     print("TESTS DE VALIDACIONES - EDGE CASES")
     print("=" * 60)
@@ -212,7 +212,7 @@ def test_validaciones():
 
 
 def test_integridad():
-    from services.inventario_service import inventario_service
+    from services.inventario import inventario_service
     print("\n" + "=" * 60)
     print("TESTS DE INTEGRIDAD - LOGICA DE NEGOCIO")
     print("=" * 60)
@@ -250,7 +250,7 @@ def test_integridad():
 
 
 def test_overflow():
-    from services.inventario_service import inventario_service
+    from services.inventario import inventario_service
     print("\n" + "=" * 60)
     print("TESTS DE SEGURIDAD - OVERFLOW / LIMITES")
     print("=" * 60)

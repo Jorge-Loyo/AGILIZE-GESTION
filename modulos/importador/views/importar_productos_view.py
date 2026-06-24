@@ -185,7 +185,7 @@ class ImportarProductosView(QWidget):
         fila_inicio = self._spin_inicio.value() - 1
 
         import pandas as pd
-        from services.inventario_service import inventario_service
+        from services.inventario import inventario_service
 
         creados = 0
         actualizados = 0

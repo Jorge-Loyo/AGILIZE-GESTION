@@ -236,7 +236,7 @@ class FacturadorView(QWidget):
         if not texto:
             return
 
-        from services.inventario_service import inventario_service
+        from services.inventario import inventario_service
         from core.database import get_db
         from models.inventario import StockDeposito, Deposito
 
@@ -403,7 +403,7 @@ class FacturadorView(QWidget):
 
         try:
             from services.finanzas.finanzas_service import finanzas_service
-            from services.inventario_service import inventario_service
+            from services.inventario import inventario_service
 
             items_factura = [{"descripcion": i["nombre"], "cantidad": i["cantidad"], "precio_unitario": i["precio"]} for i in self._items]
             datos = {
@@ -418,7 +418,7 @@ class FacturadorView(QWidget):
             # Descontar stock de los depositos correspondientes
             for item in self._items:
                 try:
-                    from services.inventario_service import inventario_service
+                    from services.inventario import inventario_service
                     productos = inventario_service.buscar_productos(item["codigo"])
                     if productos:
                         inventario_service.registrar_salida(

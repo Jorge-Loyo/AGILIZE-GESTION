@@ -3,7 +3,7 @@ from PySide6.QtWidgets import (
     QTableWidgetItem, QHeaderView,
 )
 from PySide6.QtCore import Qt
-from services.inventario_service import inventario_service
+from services.inventario import inventario_service
 
 
 class DashboardInventarioView(QWidget):

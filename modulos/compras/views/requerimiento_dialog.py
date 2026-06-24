@@ -187,7 +187,7 @@ class RequerimientoDialog(QDialog):
         if not texto:
             return
 
-        from services.inventario_service import inventario_service
+        from services.inventario import inventario_service
         from core.database import get_db
         from models.inventario import StockDeposito, MovimientoStock
         from models.comercial import OrdenCompraDetalle, OrdenCompra

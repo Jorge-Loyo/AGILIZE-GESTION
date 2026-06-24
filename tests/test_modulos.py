@@ -7,7 +7,7 @@ from datetime import date
 
 class TestInventarioService:
     def test_resumen_vacio(self):
-        from services.inventario_service import inventario_service
+        from services.inventario import inventario_service
         r = inventario_service.resumen()
         assert "total_productos" in r
         assert "total_depositos" in r
@@ -16,12 +16,12 @@ class TestInventarioService:
         assert "movimientos_hoy" in r
 
     def test_crear_categoria(self):
-        from services.inventario_service import inventario_service
+        from services.inventario import inventario_service
         cat = inventario_service.crear_categoria("Test Cat", "Categoria de prueba")
         assert cat is not None
 
     def test_crear_producto(self):
-        from services.inventario_service import inventario_service
+        from services.inventario import inventario_service
         p = inventario_service.crear_producto({
             "codigo": "TEST999",
             "nombre": "Producto Test",
@@ -32,42 +32,42 @@ class TestInventarioService:
         assert p is not None
 
     def test_crear_deposito(self):
-        from services.inventario_service import inventario_service
+        from services.inventario import inventario_service
         d = inventario_service.crear_deposito("Deposito Test")
         assert d is not None
 
     def test_buscar_productos(self):
-        from services.inventario_service import inventario_service
+        from services.inventario import inventario_service
         resultados = inventario_service.buscar_productos("TEST999")
         assert isinstance(resultados, list)
 
     def test_listar_productos(self):
-        from services.inventario_service import inventario_service
+        from services.inventario import inventario_service
         productos = inventario_service.listar_productos()
         assert isinstance(productos, list)
 
     def test_listar_depositos(self):
-        from services.inventario_service import inventario_service
+        from services.inventario import inventario_service
         depositos = inventario_service.listar_depositos()
         assert isinstance(depositos, list)
 
     def test_registrar_entrada_cantidad_invalida(self):
-        from services.inventario_service import inventario_service
+        from services.inventario import inventario_service
         with pytest.raises(ValueError):
             inventario_service.registrar_entrada(1, 1, -5)
 
     def test_registrar_salida_cantidad_invalida(self):
-        from services.inventario_service import inventario_service
+        from services.inventario import inventario_service
         with pytest.raises(ValueError):
             inventario_service.registrar_salida(1, 1, 0)
 
     def test_transferencia_mismo_deposito(self):
-        from services.inventario_service import inventario_service
+        from services.inventario import inventario_service
         with pytest.raises(ValueError):
             inventario_service.registrar_transferencia(1, 1, 1, 5)
 
     def test_productos_bajo_minimo(self):
-        from services.inventario_service import inventario_service
+        from services.inventario import inventario_service
         resultado = inventario_service.productos_bajo_minimo()
         assert isinstance(resultado, list)
 

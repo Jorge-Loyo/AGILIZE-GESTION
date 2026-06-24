@@ -13,7 +13,7 @@ class TestRendimiento:
 
     def test_listar_productos_rendimiento(self):
         """Listar productos debe tardar menos de 1 segundo."""
-        from services.inventario_service import inventario_service
+        from services.inventario import inventario_service
         start = time.time()
         for _ in range(100):
             inventario_service.listar_productos()
@@ -40,7 +40,7 @@ class TestRendimiento:
 
     def test_busqueda_productos_rendimiento(self):
         """Busqueda de productos debe tardar menos de 500ms."""
-        from services.inventario_service import inventario_service
+        from services.inventario import inventario_service
         start = time.time()
         for _ in range(50):
             inventario_service.buscar_productos("test")
@@ -58,7 +58,7 @@ class TestRendimiento:
 
     def test_resumen_inventario_rendimiento(self):
         """Resumen de inventario debe tardar menos de 1 segundo."""
-        from services.inventario_service import inventario_service
+        from services.inventario import inventario_service
         start = time.time()
         for _ in range(50):
             inventario_service.resumen()
@@ -111,7 +111,7 @@ class TestSeguridad:
 
     def test_sql_injection_busqueda_productos(self):
         """Busqueda de productos no debe ser vulnerable a SQL injection."""
-        from services.inventario_service import inventario_service
+        from services.inventario import inventario_service
         # Intentar inyeccion SQL
         payloads = [
             "'; DROP TABLE productos; --",
@@ -228,7 +228,7 @@ class TestSeguridad:
 
     def test_salida_sin_stock_no_permitida(self):
         """No debe permitir sacar mas stock del disponible."""
-        from services.inventario_service import inventario_service
+        from services.inventario import inventario_service
         with pytest.raises(ValueError, match="insuficiente"):
             inventario_service.registrar_salida(99999, 99999, 1000000)
 

@@ -5,7 +5,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 import qtawesome as qta
-from services.inventario_service import inventario_service
+from services.inventario import inventario_service
 from core.database import get_db
 from models.sucursal import Sucursal
 

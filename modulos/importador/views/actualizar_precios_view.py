@@ -189,7 +189,7 @@ class ActualizarPreciosView(QWidget):
             return
 
         import pandas as pd
-        from services.inventario_service import inventario_service
+        from services.inventario import inventario_service
 
         fila_inicio = self._spin_inicio.value() - 1
         self._resultados = []
@@ -256,7 +256,7 @@ class ActualizarPreciosView(QWidget):
         if resp != QMessageBox.Yes:
             return
 
-        from services.inventario_service import inventario_service
+        from services.inventario import inventario_service
 
         actualizados = 0
         errores = 0
