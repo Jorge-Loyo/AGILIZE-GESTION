@@ -8,6 +8,8 @@ from ui.theme_manager import theme_manager
 
 
 SUBMODULOS_ADMINISTRADOR = [
+    {"codigo": "adm_usuarios", "label": "Usuarios", "icon": "fa5s.user-cog"},
+    {"codigo": "adm_roles", "label": "Roles y Permisos", "icon": "fa5s.user-shield"},
     {"codigo": "adm_productos", "label": "Productos", "icon": "fa5s.box"},
     {"codigo": "adm_categorias", "label": "Categorias", "icon": "fa5s.tags"},
     {"codigo": "adm_depositos", "label": "Depositos", "icon": "fa5s.warehouse"},
@@ -94,6 +96,11 @@ class AdministradorView(QWidget):
             self._navigate(0)
 
     def _create_submodule(self, codigo: str) -> QWidget:
+        if codigo == "adm_usuarios":
+            from modulos.configuracion.views.usuarios_view import UsuariosView
+            return UsuariosView()
+        if codigo == "adm_roles":
+            return self._roles_permisos_view()
         if codigo == "adm_productos":
             from modulos.inventario.views.productos_view import ProductosView
             return ProductosView()
@@ -339,3 +346,101 @@ class AdministradorView(QWidget):
             btn.setProperty("active", i == index)
             btn.style().unpolish(btn)
             btn.style().polish(btn)
+
+    def _roles_permisos_view(self) -> QWidget:
+        """Vista de roles con matriz de permisos por modulo."""
+        from PySide6.QtWidgets import (
+            QTableWidget, QTableWidgetItem, QHeaderView, QMessageBox,
+            QInputDialog, QCheckBox, QTabWidget, QDialog, QFormLayout, QLineEdit,
+        )
+        page = QWidget()
+        lay = QVBoxLayout(page)
+        lay.setContentsMargins(24, 20, 24, 20)
+        lay.setSpacing(12)
+
+        header = QHBoxLayout()
+        t = QLabel("Roles y Permisos")
+        t.setObjectName("title")
+        header.addWidget(t)
+        header.addStretch()
+        btn_nuevo = QPushButton("  Nuevo Rol")
+        btn_nuevo.setIcon(qta.icon("fa5s.plus", color="#0f0f0f"))
+        btn_nuevo.setFixedHeight(32)
+        header.addWidget(btn_nuevo)
+        lay.addLayout(header)
+
+        info = QLabel("Configura que puede hacer cada rol en cada modulo del sistema.")
+        info.setStyleSheet("font-size: 11px; color: #888;")
+        lay.addWidget(info)
+
+        # Modulos del sistema
+        MODULOS_APP = [
+            "Compras", "Inventario", "Ventas", "Facturador", "RRHH",
+            "Cuentas", "Finanzas", "Reportes", "Herramientas",
+            "Importador", "Administrador", "Configuracion",
+        ]
+        ACCIONES = ["ver", "crear", "editar", "eliminar"]
+
+        # Tabla de permisos (filas=modulos, columnas=roles x acciones)
+        self._tabla_permisos = QTableWidget()
+        lay.addWidget(self._tabla_permisos, 1)
+
+        def cargar_roles():
+            from core.database import get_db
+            from models.rol import Rol
+            with get_db() as db:
+                roles = db.query(Rol).filter(Rol.activo.is_(True)).order_by(Rol.id).all()
+                roles_data = [(r.id, r.nombre) for r in roles]
+
+            # Columnas: Modulo + (ver/crear/editar/eliminar) por cada rol
+            n_cols = 1 + len(roles_data) * len(ACCIONES)
+            self._tabla_permisos.setColumnCount(n_cols)
+            headers = ["Modulo"]
+            for _, rol_nombre in roles_data:
+                for accion in ACCIONES:
+                    headers.append(f"{rol_nombre[:8]}\n{accion}")
+            self._tabla_permisos.setHorizontalHeaderLabels(headers)
+            self._tabla_permisos.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
+            self._tabla_permisos.setRowCount(len(MODULOS_APP))
+            self._tabla_permisos.verticalHeader().setVisible(False)
+
+            for i, modulo in enumerate(MODULOS_APP):
+                self._tabla_permisos.setItem(i, 0, QTableWidgetItem(modulo))
+                for j, (rol_id, _) in enumerate(roles_data):
+                    for k, accion in enumerate(ACCIONES):
+                        col = 1 + j * len(ACCIONES) + k
+                        chk = QCheckBox()
+                        # Admin tiene todo
+                        if rol_id == 1:
+                            chk.setChecked(True)
+                            chk.setEnabled(False)
+                        else:
+                            chk.setChecked(accion == "ver")  # Default: solo ver
+                        self._tabla_permisos.setCellWidget(i, col, chk)
+
+        def nuevo_rol():
+            dlg = QDialog(page)
+            dlg.setWindowTitle("Nuevo Rol")
+            dlg.setMinimumWidth(300)
+            form_lay = QVBoxLayout(dlg)
+            form = QFormLayout()
+            input_nombre = QLineEdit()
+            input_nombre.setMaxLength(50)
+            form.addRow("Nombre:", input_nombre)
+            input_desc = QLineEdit()
+            input_desc.setMaxLength(200)
+            form.addRow("Descripcion:", input_desc)
+            form_lay.addLayout(form)
+            btn_ok = QPushButton("Crear")
+            btn_ok.clicked.connect(dlg.accept)
+            form_lay.addWidget(btn_ok)
+            if dlg.exec() == QDialog.Accepted and input_nombre.text().strip():
+                from core.database import get_db
+                from models.rol import Rol
+                with get_db() as db:
+                    db.add(Rol(nombre=input_nombre.text().strip(), descripcion=input_desc.text().strip(), activo=True))
+                cargar_roles()
+
+        btn_nuevo.clicked.connect(nuevo_rol)
+        cargar_roles()
+        return page
