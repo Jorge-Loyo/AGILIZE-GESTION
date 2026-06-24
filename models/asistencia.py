@@ -36,3 +36,34 @@ class Feriado(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     fecha: Mapped[date] = mapped_column(Date, unique=True)
     descripcion: Mapped[str] = mapped_column(String(150))
+
+
+class TurnoLaboral(Base, TimestampMixin):
+    """Definicion de turnos: manana, tarde, noche, rotativo."""
+    __tablename__ = "turnos_laborales"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    codigo: Mapped[str] = mapped_column(String(20), unique=True)
+    nombre: Mapped[str] = mapped_column(String(100))
+    hora_entrada: Mapped[time] = mapped_column(Time)
+    hora_salida: Mapped[time] = mapped_column(Time)
+    tolerancia_entrada: Mapped[int] = mapped_column(Integer, default=10)  # minutos
+    tolerancia_salida: Mapped[int] = mapped_column(Integer, default=5)
+    es_nocturno: Mapped[bool] = mapped_column(Boolean, default=False)
+    horas_jornada: Mapped[Decimal] = mapped_column(Numeric(4, 2), default=Decimal("8"))
+    activo: Mapped[bool] = mapped_column(Boolean, default=True)
+
+
+class FichajePIN(Base, TimestampMixin):
+    """Registro de fichaje por PIN/codigo desde la app (sin reloj biometrico)."""
+    __tablename__ = "fichajes_pin"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    empleado_id: Mapped[int] = mapped_column(ForeignKey("empleados.id"))
+    fecha: Mapped[date] = mapped_column(Date)
+    hora: Mapped[time] = mapped_column(Time)
+    tipo: Mapped[str] = mapped_column(String(10))  # entrada, salida
+    metodo: Mapped[str] = mapped_column(String(20), default="pin")  # pin, biometrico, manual
+    dispositivo: Mapped[str] = mapped_column(String(50), default="")  # nombre PC/terminal
+
+    empleado = relationship("Empleado")
