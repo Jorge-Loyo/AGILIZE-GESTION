@@ -3,7 +3,7 @@ from PySide6.QtWidgets import (
     QPushButton, QLabel, QMessageBox, QGroupBox, QTextEdit,
 )
 from PySide6.QtCore import Qt
-from services.update_service import update_service
+from services.core.update_service import update_service
 
 
 class UpdateView(QWidget):

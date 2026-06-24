@@ -7,9 +7,9 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, Signal
 from decimal import Decimal
 from datetime import date
-from services.nomina_service import nomina_service
-from services.empleado_service import empleado_service
-from services.calculo_asistencia_service import calculo_asistencia_service
+from services.rrhh.nomina_service import nomina_service
+from services.rrhh.empleado_service import empleado_service
+from services.rrhh.calculo_asistencia_service import calculo_asistencia_service
 
 
 class LiquidarView(QWidget):
@@ -151,7 +151,7 @@ class LiquidarView(QWidget):
         return g
 
     def _cargar_datos(self):
-        from services.liquidacion_pendiente_service import liquidacion_pendiente_service
+        from services.rrhh.liquidacion_pendiente_service import liquidacion_pendiente_service
 
         # Cargar periodos pendientes
         periodos = liquidacion_pendiente_service.periodos_pendientes()
@@ -188,7 +188,7 @@ class LiquidarView(QWidget):
 
     def _on_periodo_changed(self):
         """Al cambiar periodo, cargar empleados pendientes de ese periodo."""
-        from services.liquidacion_pendiente_service import liquidacion_pendiente_service
+        from services.rrhh.liquidacion_pendiente_service import liquidacion_pendiente_service
         periodo = self.combo_periodo.currentData()
         if not periodo:
             return
@@ -207,7 +207,7 @@ class LiquidarView(QWidget):
 
     def _verificar_periodo(self):
         """Muestra resumen del estado de liquidacion del periodo."""
-        from services.liquidacion_pendiente_service import liquidacion_pendiente_service
+        from services.rrhh.liquidacion_pendiente_service import liquidacion_pendiente_service
         periodo = self.combo_periodo.currentData()
         if not periodo:
             QMessageBox.information(self, "Info", "No hay periodo seleccionado.")
@@ -254,8 +254,8 @@ class LiquidarView(QWidget):
 
         # Feriados no trabajados - AMBOS tipos de empleado
         from models.asistencia import Feriado as _Fer
-        from services.periodo_service import rango_de_periodo as _rng
-        from services.config_nomina_service import config_nomina_service as _cns
+        from services.rrhh.periodo_service import rango_de_periodo as _rng
+        from services.rrhh.config_nomina_service import config_nomina_service as _cns
         from core.database import get_db as _gdb
         _desde, _hasta = _rng(periodo)
         with _gdb() as _db:
@@ -335,7 +335,7 @@ class LiquidarView(QWidget):
             filas.append((c.nombre, c.tipo.capitalize(), monto))
 
         # Adelantos
-        from services.adelanto_service import adelanto_service
+        from services.rrhh.adelanto_service import adelanto_service
         from models.adelanto import Adelanto
         from core.database import get_db
         with get_db() as db:

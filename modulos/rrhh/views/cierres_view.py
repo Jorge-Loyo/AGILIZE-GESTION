@@ -6,10 +6,10 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, QDate
 from datetime import date
-from services.cierre_service import cierre_service
-from services.nomina_service import nomina_service
-from services.auth_service import auth_service
-from services.periodo_service import obtener_frecuencia
+from services.rrhh.cierre_service import cierre_service
+from services.rrhh.nomina_service import nomina_service
+from services.core.auth_service import auth_service
+from services.rrhh.periodo_service import obtener_frecuencia
 
 
 class CierresAsistenciaView(QWidget):

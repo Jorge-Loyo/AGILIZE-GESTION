@@ -8,7 +8,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, Signal
 import qtawesome as qta
 from ui.theme_manager import theme_manager
-from services.admin_service import admin_service
+from services.datos.admin_service import admin_service
 from modulos.configuracion.views.audit_view import AuditView
 
 

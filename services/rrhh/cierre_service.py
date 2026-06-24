@@ -52,7 +52,7 @@ class CierreService:
             db.flush()
             db.refresh(cierre)
 
-        from services.audit_service import registrar_auditoria
+        from services.core.audit_service import registrar_auditoria
         registrar_auditoria("CIERRE", "cierres_asistencia", cierre.id, f"Cerrado {desde} a {hasta}")
         return cierre
 
@@ -66,7 +66,7 @@ class CierreService:
             cierre.reabierto_por = usuario_id
             cierre.fecha_reapertura = datetime.now()
 
-        from services.audit_service import registrar_auditoria
+        from services.core.audit_service import registrar_auditoria
         registrar_auditoria("REABRIR", "cierres_asistencia", cierre_id, "Reabierto")
 
     def listar_cierres_asistencia(self) -> list[CierreAsistencia]:

@@ -5,7 +5,7 @@ from reportlab.lib.units import cm
 from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from services.empresa_service import empresa_service
+from services.core.empresa_service import empresa_service
 
 
 def generar_estado_cuenta_pdf(ruta: str, cliente_nombre: str, movimientos: list, saldo: float):

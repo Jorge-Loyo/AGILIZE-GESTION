@@ -22,7 +22,7 @@ class AuthService:
             self.current_user = user
             self._cargar_permisos(db, user)
 
-        from services.audit_service import registrar_auditoria
+        from services.core.audit_service import registrar_auditoria
         registrar_auditoria("LOGIN", "usuarios", user.id, f"Login: {username}")
         return True, "Login exitoso"
 

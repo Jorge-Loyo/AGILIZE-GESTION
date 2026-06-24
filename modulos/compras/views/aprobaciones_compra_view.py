@@ -74,7 +74,7 @@ class AprobacionesCompraView(QWidget):
         return w
 
     def _cargar_pendientes(self):
-        from services.compras_service import compras_service
+        from services.compras.compras_service import compras_service
         pendientes = compras_service.listar_aprobaciones_pendientes()
         self._pendientes = pendientes
         self._tabla_pend.setRowCount(len(pendientes))
@@ -97,7 +97,7 @@ class AprobacionesCompraView(QWidget):
         if row < 0:
             return
         aprob_id = int(self._tabla_pend.item(row, 0).text())
-        from services.compras_service import compras_service
+        from services.compras.compras_service import compras_service
         compras_service.aprobar_documento(aprob_id)
         QMessageBox.information(self, "OK", "Documento aprobado.")
         self._cargar_pendientes()
@@ -121,7 +121,7 @@ class AprobacionesCompraView(QWidget):
         btn.clicked.connect(dlg.accept)
         lay.addWidget(btn)
         if dlg.exec() == QDialog.Accepted:
-            from services.compras_service import compras_service
+            from services.compras.compras_service import compras_service
             compras_service.rechazar_documento(aprob_id, txt.toPlainText())
             QMessageBox.information(self, "OK", "Documento rechazado.")
             self._cargar_pendientes()
@@ -151,7 +151,7 @@ class AprobacionesCompraView(QWidget):
         return w
 
     def _cargar_historial(self):
-        from services.compras_service import compras_service
+        from services.compras.compras_service import compras_service
         aprobs = compras_service.listar_aprobaciones()
         self._tabla_hist.setRowCount(len(aprobs))
         for i, a in enumerate(aprobs):
@@ -209,7 +209,7 @@ class AprobacionesCompraView(QWidget):
         return w
 
     def _cargar_reglas(self):
-        from services.compras_service import compras_service
+        from services.compras.compras_service import compras_service
         reglas = compras_service.listar_reglas_aprobacion()
         self._tabla_reglas.setRowCount(len(reglas))
         for i, r in enumerate(reglas):
@@ -294,7 +294,7 @@ class AprobacionesCompraView(QWidget):
             if aprobador_id is None:
                 QMessageBox.warning(self, "Error", "Selecciona un aprobador.")
                 return
-            from services.compras_service import compras_service
+            from services.compras.compras_service import compras_service
             compras_service.crear_regla_aprobacion({
                 "nombre": nombre,
                 "documento": combo_doc.currentData(),
@@ -311,6 +311,6 @@ class AprobacionesCompraView(QWidget):
             return
         regla_id = int(self._tabla_reglas.item(row, 0).text())
         if QMessageBox.question(self, "Confirmar", "Eliminar esta regla?") == QMessageBox.Yes:
-            from services.compras_service import compras_service
+            from services.compras.compras_service import compras_service
             compras_service.eliminar_regla_aprobacion(regla_id)
             self._cargar_reglas()

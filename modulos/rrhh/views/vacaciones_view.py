@@ -5,9 +5,9 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, QDate
 from datetime import date
-from services.vacaciones_service import vacaciones_service, calcular_dias_por_antiguedad
-from services.empleado_service import empleado_service
-from services.auth_service import auth_service
+from services.rrhh.vacaciones_service import vacaciones_service, calcular_dias_por_antiguedad
+from services.rrhh.empleado_service import empleado_service
+from services.core.auth_service import auth_service
 
 
 class VacacionesView(QWidget):

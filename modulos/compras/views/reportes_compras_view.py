@@ -175,8 +175,8 @@ class ReportesComprasView(QWidget):
         if not criticos:
             QMessageBox.information(self, "Info", "No hay productos criticos.")
             return
-        from services.compras_service import compras_service
-        from services.auth_service import auth_service
+        from services.compras.compras_service import compras_service
+        from services.core.auth_service import auth_service
         solicitante = auth_service.current_user.nombre_completo if auth_service.current_user else ""
         items = [{"descripcion": f"{d['codigo']} - {d['nombre']}", "cantidad": max(d["minimo"] - d["stock"], 1)} for d in criticos]
         compras_service.crear_requisicion(solicitante, items)

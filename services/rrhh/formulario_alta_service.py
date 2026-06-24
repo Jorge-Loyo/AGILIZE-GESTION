@@ -2,7 +2,7 @@
 from pathlib import Path
 from datetime import date
 from core.config import BASE_DIR
-from services.empresa_service import empresa_service
+from services.core.empresa_service import empresa_service
 
 
 def generar_formulario_alta() -> str:

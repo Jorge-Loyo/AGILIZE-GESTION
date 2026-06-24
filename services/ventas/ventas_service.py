@@ -3,8 +3,8 @@ from datetime import date
 from sqlalchemy import func
 from core.database import get_db
 from models.comercial import Presupuesto, PresupuestoDetalle, PedidoVenta, PedidoVentaDetalle
-from services.auth_service import auth_service
-from services.empresa_service import empresa_service
+from services.core.auth_service import auth_service
+from services.core.empresa_service import empresa_service
 
 
 class VentasService:

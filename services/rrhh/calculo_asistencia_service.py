@@ -3,13 +3,13 @@ from datetime import date, timedelta
 from core.database import get_db
 from models.asistencia import Asistencia
 from models.empleado import Empleado
-from services.config_nomina_service import config_nomina_service
+from services.rrhh.config_nomina_service import config_nomina_service
 
 
 class CalculoAsistenciaService:
     def calcular_bruto_periodo(self, empleado_id: int, periodo: str) -> dict:
         """Calcula el sueldo bruto basado en asistencia real del período."""
-        from services.periodo_service import rango_de_periodo
+        from services.rrhh.periodo_service import rango_de_periodo
         desde, hasta = rango_de_periodo(periodo)
         # hasta es inclusivo, para queries usamos <= hasta
 
@@ -93,7 +93,7 @@ class CalculoAsistenciaService:
     def _calcular_mensual(self, emp, periodo, desde, hasta, db) -> dict:
         """Cálculo para empleados mensuales: sueldo - descuento por faltas."""
         from models.permiso_empleado import Ausencia
-        from services.periodo_service import obtener_frecuencia
+        from services.rrhh.periodo_service import obtener_frecuencia
 
         sueldo = emp.sueldo_mensual or Decimal("0")
         freq = obtener_frecuencia()

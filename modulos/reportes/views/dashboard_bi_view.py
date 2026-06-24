@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (
     QGroupBox,
 )
 from PySide6.QtCore import Qt
-from services.reportes_service import reportes_service
+from services.herramientas.reportes_service import reportes_service
 
 
 class DashboardBIView(QWidget):

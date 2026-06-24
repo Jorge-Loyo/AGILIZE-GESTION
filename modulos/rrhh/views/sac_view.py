@@ -5,7 +5,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 from datetime import date
-from services.sac_service import sac_service
+from services.rrhh.sac_service import sac_service
 
 
 class SACView(QWidget):

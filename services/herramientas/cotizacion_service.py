@@ -26,7 +26,7 @@ def obtener_cotizacion_hoy(pais: str) -> dict | None:
     Obtiene la cotizacion del dia desde la BD.
     Retorna None si no hay registro para hoy.
     """
-    from services.empresa_service import empresa_service
+    from services.core.empresa_service import empresa_service
     hoy = date.today().isoformat()
     clave = f"cotizacion_{pais.lower()}_{hoy}"
     valor = empresa_service.obtener(clave)
@@ -37,7 +37,7 @@ def obtener_cotizacion_hoy(pais: str) -> dict | None:
 
 def guardar_cotizacion(pais: str, valor: float):
     """Guarda la cotizacion del dia en la BD."""
-    from services.empresa_service import empresa_service
+    from services.core.empresa_service import empresa_service
     hoy = date.today().isoformat()
     clave = f"cotizacion_{pais.lower()}_{hoy}"
     empresa_service.guardar(clave, f"{valor:.4f}")
@@ -150,7 +150,7 @@ def actualizar_cotizacion(pais: str) -> dict:
 
 def obtener_ultima_cotizacion(pais: str) -> dict | None:
     """Obtiene la ultima cotizacion guardada (cualquier fecha)."""
-    from services.empresa_service import empresa_service
+    from services.core.empresa_service import empresa_service
     valor = empresa_service.obtener(f"cotizacion_{pais.lower()}_ultima")
     fecha = empresa_service.obtener(f"cotizacion_{pais.lower()}_fecha")
     if valor and fecha:

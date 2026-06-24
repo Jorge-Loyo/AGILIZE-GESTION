@@ -1,11 +1,11 @@
 import pytest
 from datetime import date
 from decimal import Decimal
-from services.empresa_service import empresa_service
-from services.periodo_service import rango_de_periodo, generar_periodos_mes, periodo_actual, obtener_frecuencia
-from services.vacaciones_service import vacaciones_service, calcular_dias_por_antiguedad
-from services.calculo_asistencia_service import calculo_asistencia_service
-from services.liquidacion_pendiente_service import liquidacion_pendiente_service
+from services.core.empresa_service import empresa_service
+from services.rrhh.periodo_service import rango_de_periodo, generar_periodos_mes, periodo_actual, obtener_frecuencia
+from services.rrhh.vacaciones_service import vacaciones_service, calcular_dias_por_antiguedad
+from services.rrhh.calculo_asistencia_service import calculo_asistencia_service
+from services.rrhh.liquidacion_pendiente_service import liquidacion_pendiente_service
 
 
 @pytest.fixture(autouse=True)

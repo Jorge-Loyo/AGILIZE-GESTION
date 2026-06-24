@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, QDate
 import qtawesome as qta
-from services.ventas_service import ventas_service
+from services.ventas.ventas_service import ventas_service
 
 
 class PresupuestosView(QWidget):

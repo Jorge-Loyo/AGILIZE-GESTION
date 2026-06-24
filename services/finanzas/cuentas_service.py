@@ -4,7 +4,7 @@ from sqlalchemy import func
 from core.database import get_db
 from models.cuentas import MovimientoCuenta
 from models.datos import Cliente, Proveedor
-from services.auth_service import auth_service
+from services.core.auth_service import auth_service
 
 
 class CuentasService:

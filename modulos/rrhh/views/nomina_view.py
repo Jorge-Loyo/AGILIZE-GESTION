@@ -9,9 +9,9 @@ from modulos.rrhh.views.liquidar_view import LiquidarView
 from modulos.rrhh.views.adelantos_view import AdelantosView
 from modulos.rrhh.views.sac_view import SACView
 from modulos.rrhh.views.resumen_mensual_view import ResumenMensualView
-from services.nomina_service import nomina_service
-from services.recibo_pdf_service import generar_recibo_pdf
-from services.export_service import exportar_excel
+from services.rrhh.nomina_service import nomina_service
+from services.rrhh.recibo_pdf_service import generar_recibo_pdf
+from services.herramientas.export_service import exportar_excel
 import os
 
 

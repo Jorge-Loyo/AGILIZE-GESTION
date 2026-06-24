@@ -1,6 +1,6 @@
 """Servicio de periodos — genera periodos segun frecuencia configurada."""
 from datetime import date, timedelta
-from services.empresa_service import empresa_service
+from services.core.empresa_service import empresa_service
 
 
 def obtener_frecuencia() -> str:

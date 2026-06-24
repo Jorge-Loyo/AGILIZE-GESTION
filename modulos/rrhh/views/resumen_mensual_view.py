@@ -7,10 +7,10 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QDate
 from datetime import date
 from decimal import Decimal
-from services.cierre_service import cierre_service
-from services.calculo_asistencia_service import calculo_asistencia_service
-from services.empleado_service import empleado_service
-from services.nomina_service import nomina_service
+from services.rrhh.cierre_service import cierre_service
+from services.rrhh.calculo_asistencia_service import calculo_asistencia_service
+from services.rrhh.empleado_service import empleado_service
+from services.rrhh.nomina_service import nomina_service
 
 
 class ResumenMensualView(QWidget):
@@ -245,7 +245,7 @@ class ResumenMensualView(QWidget):
         from core.database import get_db
         from models.asistencia import Asistencia
         from models.empleado import Empleado
-        from services.config_nomina_service import config_nomina_service
+        from services.rrhh.config_nomina_service import config_nomina_service
 
         params = config_nomina_service.obtener_todos()
         mult_extra = params["mult_hora_extra"]
@@ -353,7 +353,7 @@ class ResumenMensualView(QWidget):
             fecha = date_edit.date().toPython()
             motivo = motivo_edit.text().strip()
             try:
-                from services.permiso_ausencia_service import permiso_ausencia_service
+                from services.rrhh.permiso_ausencia_service import permiso_ausencia_service
                 permiso_ausencia_service.registrar_ausencia(emp.id, fecha, justificada=False, motivo=motivo)
                 QMessageBox.information(self, "OK", f"Falta registrada para {emp.nombre} el {fecha.strftime('%d/%m/%Y')}.")
                 self._cargar()
@@ -405,7 +405,7 @@ class ResumenMensualView(QWidget):
             fecha = date_edit.date().toPython()
             horas = Decimal(str(hs_edit.value()))
             try:
-                from services.asistencia_service import asistencia_service
+                from services.rrhh.asistencia_service import asistencia_service
                 from datetime import time
                 # Registrar como asistencia con solo horas extra
                 asistencia_service.registrar(
@@ -455,7 +455,7 @@ class ResumenMensualView(QWidget):
         if dialog.exec() == QDialog.Accepted:
             fecha = date_edit.date().toPython()
             try:
-                from services.permiso_ausencia_service import permiso_ausencia_service
+                from services.rrhh.permiso_ausencia_service import permiso_ausencia_service
                 permiso_ausencia_service.registrar_ausencia(emp.id, fecha, justificada=False, motivo="")
                 QMessageBox.information(self, "OK", f"Falta registrada el {fecha.strftime('%d/%m/%Y')}.")
                 self._cargar()
@@ -500,7 +500,7 @@ class ResumenMensualView(QWidget):
             fecha = date_edit.date().toPython()
             horas = Decimal(str(hs_edit.value()))
             try:
-                from services.asistencia_service import asistencia_service
+                from services.rrhh.asistencia_service import asistencia_service
                 from datetime import time
                 asistencia_service.registrar(emp.id, fecha, time(0, 0), time(0, 0), horas_extra=horas)
                 QMessageBox.information(self, "OK", f"{horas} hs extra registradas el {fecha.strftime('%d/%m/%Y')}.")

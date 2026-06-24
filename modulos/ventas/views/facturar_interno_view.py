@@ -8,9 +8,9 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 import qtawesome as qta
-from services.ventas_service import ventas_service
-from services.finanzas_service import finanzas_service
-from services.empresa_service import empresa_service
+from services.ventas.ventas_service import ventas_service
+from services.finanzas.finanzas_service import finanzas_service
+from services.core.empresa_service import empresa_service
 
 
 class FacturarInternoView(QWidget):

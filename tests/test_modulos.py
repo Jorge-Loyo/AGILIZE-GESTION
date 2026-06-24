@@ -76,38 +76,38 @@ class TestInventarioService:
 
 class TestDatosService:
     def test_resumen(self):
-        from services.datos_service import datos_service
+        from services.datos.datos_service import datos_service
         r = datos_service.resumen()
         assert "total_proveedores" in r
         assert "total_clientes" in r
 
     def test_crear_proveedor(self):
-        from services.datos_service import datos_service
+        from services.datos.datos_service import datos_service
         p = datos_service.crear_proveedor({"razon_social": "Proveedor Test"})
         assert p is not None
 
     def test_crear_cliente(self):
-        from services.datos_service import datos_service
+        from services.datos.datos_service import datos_service
         c = datos_service.crear_cliente({"razon_social": "Cliente Test"})
         assert c is not None
 
     def test_listar_proveedores(self):
-        from services.datos_service import datos_service
+        from services.datos.datos_service import datos_service
         proveedores = datos_service.listar_proveedores()
         assert isinstance(proveedores, list)
 
     def test_listar_clientes(self):
-        from services.datos_service import datos_service
+        from services.datos.datos_service import datos_service
         clientes = datos_service.listar_clientes()
         assert isinstance(clientes, list)
 
     def test_buscar_proveedores(self):
-        from services.datos_service import datos_service
+        from services.datos.datos_service import datos_service
         r = datos_service.buscar_proveedores("Test")
         assert isinstance(r, list)
 
     def test_buscar_clientes(self):
-        from services.datos_service import datos_service
+        from services.datos.datos_service import datos_service
         r = datos_service.buscar_clientes("Test")
         assert isinstance(r, list)
 
@@ -116,39 +116,39 @@ class TestDatosService:
 
 class TestCuentasService:
     def test_obtener_saldo_inexistente(self):
-        from services.cuentas_service import cuentas_service
+        from services.finanzas.cuentas_service import cuentas_service
         saldo = cuentas_service.obtener_saldo("cliente", 99999)
         assert saldo == 0.0
 
     def test_registrar_debe_monto_invalido(self):
-        from services.cuentas_service import cuentas_service
+        from services.finanzas.cuentas_service import cuentas_service
         with pytest.raises(ValueError):
             cuentas_service.registrar_debe("cliente", 1, -100, "test")
 
     def test_registrar_haber_monto_invalido(self):
-        from services.cuentas_service import cuentas_service
+        from services.finanzas.cuentas_service import cuentas_service
         with pytest.raises(ValueError):
             cuentas_service.registrar_haber("cliente", 1, 0, "test")
 
     def test_listar_movimientos_vacio(self):
-        from services.cuentas_service import cuentas_service
+        from services.finanzas.cuentas_service import cuentas_service
         movs = cuentas_service.listar_movimientos("cliente", 99999)
         assert isinstance(movs, list)
         assert len(movs) == 0
 
     def test_resumen_general(self):
-        from services.cuentas_service import cuentas_service
+        from services.finanzas.cuentas_service import cuentas_service
         r = cuentas_service.resumen_general()
         assert "saldo_clientes" in r
         assert "saldo_proveedores" in r
 
     def test_resumen_clientes(self):
-        from services.cuentas_service import cuentas_service
+        from services.finanzas.cuentas_service import cuentas_service
         r = cuentas_service.resumen_clientes()
         assert isinstance(r, list)
 
     def test_resumen_proveedores(self):
-        from services.cuentas_service import cuentas_service
+        from services.finanzas.cuentas_service import cuentas_service
         r = cuentas_service.resumen_proveedores()
         assert isinstance(r, list)
 
@@ -157,24 +157,24 @@ class TestCuentasService:
 
 class TestVentasService:
     def test_listar_presupuestos(self):
-        from services.ventas_service import ventas_service
+        from services.ventas.ventas_service import ventas_service
         r = ventas_service.listar_presupuestos()
         assert isinstance(r, list)
 
     def test_listar_pedidos(self):
-        from services.ventas_service import ventas_service
+        from services.ventas.ventas_service import ventas_service
         r = ventas_service.listar_pedidos()
         assert isinstance(r, list)
 
     def test_crear_presupuesto(self):
-        from services.ventas_service import ventas_service
+        from services.ventas.ventas_service import ventas_service
         items = [{"descripcion": "Item test", "cantidad": 2, "precio_unitario": 100}]
         p = ventas_service.crear_presupuesto("Cliente Test", items)
         assert p is not None
         assert p.total > 0
 
     def test_crear_pedido(self):
-        from services.ventas_service import ventas_service
+        from services.ventas.ventas_service import ventas_service
         items = [{"descripcion": "Item test", "cantidad": 1, "precio_unitario": 50}]
         p = ventas_service.crear_pedido("Cliente Test", items)
         assert p is not None
@@ -185,12 +185,12 @@ class TestVentasService:
 
 class TestComprasService:
     def test_listar_ordenes(self):
-        from services.compras_service import compras_service
+        from services.compras.compras_service import compras_service
         r = compras_service.listar_ordenes()
         assert isinstance(r, list)
 
     def test_crear_orden(self):
-        from services.compras_service import compras_service
+        from services.compras.compras_service import compras_service
         items = [{"descripcion": "Insumo test", "cantidad": 10, "precio_unitario": 25}]
         o = compras_service.crear_orden("Proveedor Test", items)
         assert o is not None
@@ -201,12 +201,12 @@ class TestComprasService:
 
 class TestFinanzasService:
     def test_listar_cuentas_contables(self):
-        from services.finanzas_service import finanzas_service
+        from services.finanzas.finanzas_service import finanzas_service
         cuentas = finanzas_service.listar_cuentas()
         assert isinstance(cuentas, list)
 
     def test_crear_asiento_descuadrado(self):
-        from services.finanzas_service import finanzas_service
+        from services.finanzas.finanzas_service import finanzas_service
         cuentas = finanzas_service.listar_cuentas()
         if len(cuentas) >= 2:
             with pytest.raises(ValueError, match="descuadrado"):
@@ -217,7 +217,7 @@ class TestFinanzasService:
                 )
 
     def test_crear_asiento_cuadrado(self):
-        from services.finanzas_service import finanzas_service
+        from services.finanzas.finanzas_service import finanzas_service
         cuentas = finanzas_service.listar_cuentas()
         if len(cuentas) >= 2:
             cuentas_no_grupo = [c for c in cuentas if not c.es_grupo]
@@ -231,17 +231,17 @@ class TestFinanzasService:
                 assert a.numero > 0
 
     def test_listar_asientos(self):
-        from services.finanzas_service import finanzas_service
+        from services.finanzas.finanzas_service import finanzas_service
         asientos = finanzas_service.listar_asientos()
         assert isinstance(asientos, list)
 
     def test_listar_facturas(self):
-        from services.finanzas_service import finanzas_service
+        from services.finanzas.finanzas_service import finanzas_service
         facturas = finanzas_service.listar_facturas()
         assert isinstance(facturas, list)
 
     def test_crear_factura(self):
-        from services.finanzas_service import finanzas_service
+        from services.finanzas.finanzas_service import finanzas_service
         datos = {
             "tipo_comprobante": "factura",
             "letra": "",
@@ -255,12 +255,12 @@ class TestFinanzasService:
         assert f.total == 1160  # 1000 + 16%
 
     def test_listar_cuentas_bancarias(self):
-        from services.finanzas_service import finanzas_service
+        from services.finanzas.finanzas_service import finanzas_service
         cuentas = finanzas_service.listar_cuentas_bancarias()
         assert isinstance(cuentas, list)
 
     def test_abrir_caja_doble(self):
-        from services.finanzas_service import finanzas_service
+        from services.finanzas.finanzas_service import finanzas_service
         # Si hay caja abierta, cerrarla primero
         if finanzas_service.caja_actual():
             finanzas_service.cerrar_caja(0)
@@ -270,7 +270,7 @@ class TestFinanzasService:
         finanzas_service.cerrar_caja(1000)
 
     def test_resumen_caja_sin_abrir(self):
-        from services.finanzas_service import finanzas_service
+        from services.finanzas.finanzas_service import finanzas_service
         if finanzas_service.caja_actual():
             finanzas_service.cerrar_caja(0)
         r = finanzas_service.resumen_caja()
@@ -281,24 +281,24 @@ class TestFinanzasService:
 
 class TestFacturadorConfig:
     def test_listar(self):
-        from services.facturador_config_service import facturador_config_service
+        from services.datos.facturador_config_service import facturador_config_service
         r = facturador_config_service.listar()
         assert isinstance(r, list)
 
     def test_crear_facturador(self):
-        from services.facturador_config_service import facturador_config_service
+        from services.datos.facturador_config_service import facturador_config_service
         f = facturador_config_service.crear("FTEST", "Test POS", depositos_ids="1,2")
         assert f is not None
         assert f.codigo == "FTEST"
 
     def test_obtener_por_codigo(self):
-        from services.facturador_config_service import facturador_config_service
+        from services.datos.facturador_config_service import facturador_config_service
         f = facturador_config_service.obtener_por_codigo("FTEST")
         if f:
             assert f.codigo == "FTEST"
 
     def test_get_depositos_ids(self):
-        from services.facturador_config_service import facturador_config_service
+        from services.datos.facturador_config_service import facturador_config_service
         f = facturador_config_service.obtener_por_codigo("FTEST")
         if f:
             ids = facturador_config_service.get_depositos_ids(f)
@@ -307,7 +307,7 @@ class TestFacturadorConfig:
             assert 2 in ids
 
     def test_obtener_inexistente(self):
-        from services.facturador_config_service import facturador_config_service
+        from services.datos.facturador_config_service import facturador_config_service
         f = facturador_config_service.obtener_por_codigo("NOEXISTE")
         assert f is None
 
@@ -316,7 +316,7 @@ class TestFacturadorConfig:
 
 class TestReportesService:
     def test_kpis_generales(self):
-        from services.reportes_service import reportes_service
+        from services.herramientas.reportes_service import reportes_service
         r = reportes_service.kpis_generales()
         assert "ventas_mes" in r
         assert "compras_mes" in r
@@ -328,7 +328,7 @@ class TestReportesService:
         assert "total_clientes" in r
 
     def test_ventas_por_mes(self):
-        from services.reportes_service import reportes_service
+        from services.herramientas.reportes_service import reportes_service
         r = reportes_service.ventas_por_mes(3)
         assert isinstance(r, list)
         assert len(r) == 3
@@ -337,6 +337,6 @@ class TestReportesService:
             assert "total" in item
 
     def test_top_clientes(self):
-        from services.reportes_service import reportes_service
+        from services.herramientas.reportes_service import reportes_service
         r = reportes_service.top_clientes(5)
         assert isinstance(r, list)

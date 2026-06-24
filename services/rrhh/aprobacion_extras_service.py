@@ -10,7 +10,7 @@ from sqlalchemy.orm import joinedload
 
 def extras_requieren_aprobacion() -> bool:
     """Verifica si el módulo de aprobación está activo."""
-    from services.empresa_service import empresa_service
+    from services.core.empresa_service import empresa_service
     val = empresa_service.obtener("aprobacion_extras_activa")
     return val == "1" or val == "true"
 

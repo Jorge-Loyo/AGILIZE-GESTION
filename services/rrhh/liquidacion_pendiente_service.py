@@ -6,7 +6,7 @@ from core.database import get_db
 from models.asistencia import Asistencia
 from models.empleado import Empleado
 from models.cierre import CierreLiquidacion
-from services.periodo_service import obtener_frecuencia, periodo_actual, rango_de_periodo, generar_periodos_mes
+from services.rrhh.periodo_service import obtener_frecuencia, periodo_actual, rango_de_periodo, generar_periodos_mes
 
 
 class LiquidacionPendienteService:

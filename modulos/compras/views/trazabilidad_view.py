@@ -68,7 +68,7 @@ class TrazabilidadCompraView(QWidget):
         tipo = self._combo_tipo.currentData()
         doc_id = self._spin_id.value()
 
-        from services.compras_service import compras_service
+        from services.compras.compras_service import compras_service
         traza = compras_service.obtener_trazabilidad(tipo, doc_id)
 
         # Limpiar resultado anterior

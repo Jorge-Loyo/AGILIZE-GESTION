@@ -5,7 +5,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, QDate
 import qtawesome as qta
-from services.compras_service import compras_service
+from services.compras.compras_service import compras_service
 
 
 class FacturasCompraView(QWidget):

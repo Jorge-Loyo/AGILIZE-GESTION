@@ -290,8 +290,8 @@ class ReqSugeridoView(QWidget):
             return
 
         try:
-            from services.compras_service import compras_service
-            from services.auth_service import auth_service
+            from services.compras.compras_service import compras_service
+            from services.core.auth_service import auth_service
 
             solicitante = ""
             if auth_service.current_user:

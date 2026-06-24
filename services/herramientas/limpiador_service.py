@@ -18,7 +18,7 @@ IVA_FACTOR = 1 + IVA_VENEZUELA
 def _get_config():
     """Obtiene configuracion de la BD o usa defaults."""
     try:
-        from services.empresa_service import empresa_service
+        from services.core.empresa_service import empresa_service
         datos = empresa_service.obtener_todos()
         iva = float(datos.get("iva_porcentaje", "16.00")) / 100
         col_map = {

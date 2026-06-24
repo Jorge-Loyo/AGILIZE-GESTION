@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
 )
 from PySide6.QtCore import Qt
-from services.empleado_service import empleado_service
+from services.rrhh.empleado_service import empleado_service
 
 
 class MapeoFichadasDialog(QDialog):

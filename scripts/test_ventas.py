@@ -7,8 +7,8 @@ sys.path.insert(0, '.')
 def test_rendimiento():
     from services.cliente_service import cliente_service
     from services.precios_venta_service import precios_venta_service
-    from services.riesgo_venta_service import riesgo_venta_service
-    from services.reportes_venta_service import reportes_venta_service
+    from services.ventas.riesgo_venta_service import riesgo_venta_service
+    from services.ventas.reportes_venta_service import reportes_venta_service
 
     print("=" * 60)
     print("TESTS DE RENDIMIENTO - MODULO VENTAS")
@@ -92,7 +92,7 @@ def test_seguridad():
 
 def test_validaciones():
     from services.cliente_service import cliente_service
-    from services.riesgo_venta_service import riesgo_venta_service
+    from services.ventas.riesgo_venta_service import riesgo_venta_service
     from services.precios_venta_service import precios_venta_service
 
     print("\n" + "=" * 60)
@@ -165,9 +165,9 @@ def test_validaciones():
 
 def test_integridad():
     from services.cliente_service import cliente_service
-    from services.riesgo_venta_service import riesgo_venta_service
+    from services.ventas.riesgo_venta_service import riesgo_venta_service
     from services.precios_venta_service import precios_venta_service
-    from services.reportes_venta_service import reportes_venta_service
+    from services.ventas.reportes_venta_service import reportes_venta_service
 
     print("\n" + "=" * 60)
     print("TESTS DE INTEGRIDAD - LOGICA DE NEGOCIO")
@@ -231,12 +231,12 @@ def test_overflow():
         print("[OK] Credito ID=-1: ValueError")
 
     # Monto extremo
-    from services.riesgo_venta_service import riesgo_venta_service
+    from services.ventas.riesgo_venta_service import riesgo_venta_service
     r = riesgo_venta_service.validar_venta(1, 99999999999)
     print(f"[OK] Venta monto extremo: puede_vender={r['puede_vender']}")
 
     # Dias=0 en reportes
-    from services.reportes_venta_service import reportes_venta_service
+    from services.ventas.reportes_venta_service import reportes_venta_service
     try:
         reportes_venta_service.ranking_productos(0)
         print("[OK] Ranking dias=0: no crash")

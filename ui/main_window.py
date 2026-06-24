@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QShortcut, QKeySequence
-from services.auth_service import auth_service
+from services.core.auth_service import auth_service
 from ui.theme_manager import theme_manager
 from ui.dashboard_view import DashboardView
 from ui.busqueda_global import BusquedaGlobalWidget

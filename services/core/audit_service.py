@@ -1,6 +1,6 @@
 from core.database import get_db
 from models.audit_log import AuditLog
-from services.auth_service import auth_service
+from services.core.auth_service import auth_service
 
 
 def registrar_auditoria(accion: str, tabla: str = "", registro_id: int | None = None, detalle: str = ""):

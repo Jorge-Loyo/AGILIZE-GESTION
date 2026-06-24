@@ -51,7 +51,7 @@ class FinanzasView(QWidget):
 
         # Mostrar pais configurado
         try:
-            from services.empresa_service import empresa_service
+            from services.core.empresa_service import empresa_service
             pais = empresa_service.obtener("cotizacion_pais") or "Sin configurar"
         except Exception:
             pais = "Sin configurar"

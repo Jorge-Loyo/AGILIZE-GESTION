@@ -5,8 +5,8 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, Signal, QSize
 from PySide6.QtGui import QPixmap
 import qtawesome as qta
-from services.logo_service import get_dev_logo_path
-from services.empresa_service import empresa_service
+from services.core.logo_service import get_dev_logo_path
+from services.core.empresa_service import empresa_service
 
 
 class LoginView(QWidget):
@@ -127,7 +127,7 @@ class LoginView(QWidget):
             return
 
         try:
-            from services.auth_service import auth_service
+            from services.core.auth_service import auth_service
             success, msg = auth_service.login(username, password)
 
             if success:
@@ -163,7 +163,7 @@ class LoginView(QWidget):
         dlg.exec()
 
     def closeEvent(self, event):
-        from services.auth_service import auth_service
+        from services.core.auth_service import auth_service
         if not auth_service.current_user:
             from PySide6.QtWidgets import QApplication
             QApplication.instance().quit()

@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, QThread, Signal
 import qtawesome as qta
-from services.empresa_service import empresa_service
+from services.core.empresa_service import empresa_service
 
 
 class CotizacionesView(QWidget):
@@ -151,7 +151,7 @@ class CotizacionesView(QWidget):
 
     def _on_pais_change(self):
         pais = self._combo_pais.currentData()
-        from services.cotizacion_service import PAISES
+        from services.herramientas.cotizacion_service import PAISES
         info = PAISES.get(pais, {})
         self._lbl_fuente.setText(f"Fuente: {info.get('url', '')}")
 
@@ -169,10 +169,10 @@ class CotizacionesView(QWidget):
             if idx >= 0:
                 self._combo_pais.setCurrentIndex(idx)
 
-            from services.cotizacion_service import obtener_ultima_cotizacion
+            from services.herramientas.cotizacion_service import obtener_ultima_cotizacion
             ultima = obtener_ultima_cotizacion(pais_guardado)
             if ultima:
-                from services.cotizacion_service import PAISES
+                from services.herramientas.cotizacion_service import PAISES
                 moneda = PAISES.get(pais_guardado, {}).get("moneda", "$")
                 self._set_card(self._card_valor, f"{moneda} {ultima['valor']:,.4f}")
                 self._set_card(self._card_fecha, ultima["fecha"])
@@ -197,7 +197,7 @@ class CotizacionesView(QWidget):
 
             def run(self):
                 try:
-                    from services.cotizacion_service import actualizar_cotizacion
+                    from services.herramientas.cotizacion_service import actualizar_cotizacion
                     result = actualizar_cotizacion(self._pais)
                     self.finished.emit(result)
                 except Exception as e:
@@ -213,7 +213,7 @@ class CotizacionesView(QWidget):
         self._btn_actualizar.setText("  Obtener cotizacion")
 
         pais = result["pais"]
-        from services.cotizacion_service import PAISES
+        from services.herramientas.cotizacion_service import PAISES
         moneda = PAISES.get(pais, {}).get("moneda", "$")
 
         self._set_card(self._card_valor, f"{moneda} {result['valor']:,.4f}")

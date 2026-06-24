@@ -15,7 +15,7 @@ class DashboardService:
         if not periodo:
             periodo = date.today().strftime("%Y-%m")
 
-        from services.periodo_service import rango_de_periodo
+        from services.rrhh.periodo_service import rango_de_periodo
         desde, hasta = rango_de_periodo(periodo)
 
         with get_db() as db:

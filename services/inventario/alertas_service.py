@@ -43,7 +43,7 @@ class AlertasService:
         items_reposicion = [a for a in alertas if a["tipo_alerta"] in ("punto_pedido", "bajo_minimo") and a["cantidad_sugerida"] > 0]
         if not items_reposicion:
             return 0
-        from services.compras_service import compras_service
+        from services.compras.compras_service import compras_service
         items = [{"descripcion": f"{i['codigo']} - {i['nombre']}", "cantidad": i["cantidad_sugerida"]} for i in items_reposicion]
         compras_service.crear_requisicion("Sistema - Reposicion Automatica", items)
         return len(items)

@@ -2,7 +2,7 @@ from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QLabel,
     QTableWidget, QTableWidgetItem, QHeaderView,
 )
-from services.audit_service import listar_auditoria
+from services.core.audit_service import listar_auditoria
 
 
 class AuditView(QWidget):

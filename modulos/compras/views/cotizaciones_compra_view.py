@@ -68,7 +68,7 @@ class CotizacionesCompraView(QWidget):
         layout.addLayout(bot)
 
     def _cargar(self):
-        from services.compras_service import compras_service
+        from services.compras.compras_service import compras_service
         cotizaciones = compras_service.listar_cotizaciones()
         self._cotizaciones = cotizaciones
         self._tabla.setRowCount(len(cotizaciones))
@@ -99,7 +99,7 @@ class CotizacionesCompraView(QWidget):
         dlg = _NuevaCotizacionDialog(self)
         if dlg.exec() == QDialog.Accepted:
             data = dlg.datos()
-            from services.compras_service import compras_service
+            from services.compras.compras_service import compras_service
             compras_service.crear_cotizacion(
                 descripcion=data["descripcion"],
                 items=data["items"],
@@ -122,7 +122,7 @@ class CotizacionesCompraView(QWidget):
         cot_id = int(self._tabla.item(row, 0).text())
 
         # Mostrar proveedores que cotizaron
-        from services.compras_service import compras_service
+        from services.compras.compras_service import compras_service
         detalles = compras_service.obtener_cotizacion_detalles(cot_id)
         if not detalles:
             QMessageBox.warning(self, "Aviso", "No hay cotizaciones cargadas.")
@@ -163,7 +163,7 @@ class CotizacionesCompraView(QWidget):
             QMessageBox.warning(self, "Aviso", "Primero debes adjudicar la cotizacion.")
             return
         try:
-            from services.compras_service import compras_service
+            from services.compras.compras_service import compras_service
             compras_service.generar_oc_desde_cotizacion(cot_id)
             QMessageBox.information(self, "Exito", "Orden de Compra generada desde la cotizacion.")
         except Exception as e:
@@ -339,7 +339,7 @@ class _ComparacionDialog(QDialog):
         self.setMinimumSize(800, 450)
         layout = QVBoxLayout(self)
 
-        from services.compras_service import compras_service
+        from services.compras.compras_service import compras_service
         detalles = compras_service.obtener_cotizacion_detalles(cotizacion_id)
 
         if not detalles:

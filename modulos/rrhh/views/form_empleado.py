@@ -8,7 +8,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, Signal, QDate, QTime
 from PySide6.QtGui import QIntValidator
-from services.empleado_service import empleado_service
+from services.rrhh.empleado_service import empleado_service
 from decimal import Decimal
 
 
@@ -154,7 +154,7 @@ class FormEmpleado(QWidget):
         self.input_hora_entrada.setMinimumHeight(32)
         self.input_hora_entrada.setDisplayFormat("HH:mm")
         # Leer default de config
-        from services.empresa_service import empresa_service as _emp_svc
+        from services.core.empresa_service import empresa_service as _emp_svc
         _ent = (_emp_svc.obtener("jornada_entrada") or "08:00").split(":")
         _sal = (_emp_svc.obtener("jornada_salida") or "17:00").split(":")
         self.input_hora_entrada.setTime(QTime(int(_ent[0]), int(_ent[1])))

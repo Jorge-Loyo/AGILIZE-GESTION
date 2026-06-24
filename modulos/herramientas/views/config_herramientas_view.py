@@ -5,7 +5,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 import qtawesome as qta
-from services.empresa_service import empresa_service
+from services.core.empresa_service import empresa_service
 
 
 # Claves de configuracion en BD

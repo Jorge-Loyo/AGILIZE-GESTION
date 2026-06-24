@@ -40,7 +40,7 @@ class EmpleadoService:
             db.add(empleado)
             db.flush()
             db.refresh(empleado)
-        from services.audit_service import registrar_auditoria
+        from services.core.audit_service import registrar_auditoria
         registrar_auditoria("CREATE", "empleados", empleado.id, f"{empleado.apellido}, {empleado.nombre}")
         return empleado
 
@@ -68,7 +68,7 @@ class EmpleadoService:
                 setattr(empleado, key, value)
             db.flush()
             db.refresh(empleado)
-        from services.audit_service import registrar_auditoria
+        from services.core.audit_service import registrar_auditoria
         registrar_auditoria("UPDATE", "empleados", empleado_id, f"Actualizado")
         return empleado
 
@@ -79,7 +79,7 @@ class EmpleadoService:
             if not empleado:
                 return False
             empleado.activo = False
-        from services.audit_service import registrar_auditoria
+        from services.core.audit_service import registrar_auditoria
         registrar_auditoria("DELETE", "empleados", empleado_id, "Baja logica")
         return True
 

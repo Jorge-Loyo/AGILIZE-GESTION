@@ -199,7 +199,7 @@ class EtiquetasProductoView(QWidget):
             return
 
         try:
-            from services.etiquetas_service import generar_etiquetas_producto
+            from services.herramientas.etiquetas_service import generar_etiquetas_producto
             formatos = ["ean13", "code128", "code39"]
             formato = formatos[self._combo_formato.currentIndex()]
             columnas = self._spin_cols.value()

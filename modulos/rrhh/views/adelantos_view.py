@@ -7,8 +7,8 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QDate
 from decimal import Decimal
 from datetime import date
-from services.adelanto_service import adelanto_service
-from services.empleado_service import empleado_service
+from services.rrhh.adelanto_service import adelanto_service
+from services.rrhh.empleado_service import empleado_service
 
 
 class AdelantosView(QWidget):
@@ -175,7 +175,7 @@ class AdelantosView(QWidget):
             QMessageBox.critical(self, "Error", str(e))
 
     def _cargar_periodos_combo(self):
-        from services.periodo_service import generar_periodos_mes
+        from services.rrhh.periodo_service import generar_periodos_mes
         hoy = date.today()
         self.adelanto_periodo.clear()
         # Mes actual + siguiente

@@ -10,7 +10,7 @@ from pathlib import Path
 import shutil
 import qtawesome as qta
 from ui.theme_manager import theme_manager
-from services.empresa_service import empresa_service
+from services.core.empresa_service import empresa_service
 from core.database import get_db
 from models.sucursal import Sucursal
 from core.config import BASE_DIR
@@ -687,7 +687,7 @@ class ConfigGlobalView(QWidget):
 
     def _crear_backup(self):
         try:
-            from services.backup_service import crear_backup
+            from services.core.backup_service import crear_backup
             filepath = crear_backup()
             self.lbl_backup_info.setText(f"Backup creado: {filepath}")
             QMessageBox.information(self, "Backup", f"Backup creado exitosamente:\n\n{filepath}")
@@ -702,7 +702,7 @@ class ConfigGlobalView(QWidget):
         if not filepath:
             return
         try:
-            from services.backup_service import crear_backup
+            from services.core.backup_service import crear_backup
             result = crear_backup(destino=filepath)
             self.lbl_backup_info.setText(f"Exportado: {result}")
             QMessageBox.information(self, "Backup", f"Backup exportado a:\n\n{result}")
@@ -724,7 +724,7 @@ class ConfigGlobalView(QWidget):
         if resp != QMessageBox.Yes:
             return
         try:
-            from services.backup_service import restaurar_backup
+            from services.core.backup_service import restaurar_backup
             msg = restaurar_backup(filepath)
             self.lbl_backup_info.setText(f"Restaurado: {filepath}")
             QMessageBox.information(self, "Backup", msg)
@@ -761,7 +761,7 @@ class ConfigGlobalView(QWidget):
             return
 
         try:
-            from services.reset_service import resetear_aplicacion
+            from services.core.reset_service import resetear_aplicacion
             msg = resetear_aplicacion()
             QMessageBox.information(self, "Reseteo Completado", msg)
         except Exception as e:

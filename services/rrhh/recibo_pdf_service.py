@@ -11,7 +11,7 @@ from reportlab.lib.enums import TA_CENTER, TA_RIGHT
 
 from core.config import settings, BASE_DIR
 from core.database import get_db
-from services.empresa_service import empresa_service
+from services.core.empresa_service import empresa_service
 from sqlalchemy.orm import joinedload
 from models.nomina import Liquidacion, LiquidacionDetalle
 from models.empleado import Empleado
@@ -60,7 +60,7 @@ def generar_recibo_pdf(liquidacion_id: int) -> str:
         detalles_data = [(d.concepto.nombre if d.concepto else "", d.tipo, d.monto) for d in liq.detalles]
 
     # Calcular detalle de asistencia
-    from services.calculo_asistencia_service import calculo_asistencia_service
+    from services.rrhh.calculo_asistencia_service import calculo_asistencia_service
     calc = calculo_asistencia_service.calcular_bruto_periodo(liq.empleado_id, liq_periodo)
 
     filename = f"recibo_{emp_legajo}_{emp_apellido}_{emp_nombre}_{liq_periodo}.pdf".replace(" ", "_")

@@ -6,8 +6,8 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QDate
 from datetime import date
 from decimal import Decimal
-from services.empleado_service import empleado_service
-from services.permiso_ausencia_service import permiso_ausencia_service
+from services.rrhh.empleado_service import empleado_service
+from services.rrhh.permiso_ausencia_service import permiso_ausencia_service
 
 
 class NovedadesMensualesView(QWidget):
@@ -154,7 +154,7 @@ class NovedadesMensualesView(QWidget):
         horas = Decimal(str(self.extra_horas.value()))
         tipo_dia = self.extra_tipo.currentData()  # "normal" o "feriado"
         try:
-            from services.asistencia_service import asistencia_service
+            from services.rrhh.asistencia_service import asistencia_service
             from datetime import time
             asistencia_service.registrar(emp_id, fecha, time(0, 0), time(0, 0), incompleto=False)
             from core.database import get_db

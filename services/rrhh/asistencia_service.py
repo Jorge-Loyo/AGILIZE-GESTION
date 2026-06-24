@@ -11,7 +11,7 @@ JORNADA_DEFAULT = Decimal("8")
 class AsistenciaService:
     def registrar(self, empleado_id: int, fecha: date, hora_entrada: time, hora_salida: time, incompleto: bool = False) -> Asistencia:
         # Validar cierre
-        from services.cierre_service import cierre_service
+        from services.rrhh.cierre_service import cierre_service
         if cierre_service.fecha_en_cierre(fecha):
             raise ValueError(f"La fecha {fecha.strftime('%d/%m/%Y')} esta en un periodo cerrado. No se puede editar.")
 

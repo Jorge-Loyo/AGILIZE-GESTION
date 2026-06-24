@@ -5,8 +5,8 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt
 from datetime import date
 import calendar
-from services.asistencia_service import asistencia_service
-from services.empleado_service import empleado_service
+from services.rrhh.asistencia_service import asistencia_service
+from services.rrhh.empleado_service import empleado_service
 
 
 class CalendarioDialog(QDialog):

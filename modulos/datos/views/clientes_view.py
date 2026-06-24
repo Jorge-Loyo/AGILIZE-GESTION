@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 import qtawesome as qta
-from services.datos_service import datos_service
+from services.datos.datos_service import datos_service
 
 
 class ClientesView(QWidget):

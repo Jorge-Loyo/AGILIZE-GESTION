@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (
     QMessageBox, QWidget,
 )
 from PySide6.QtCore import Qt, Signal, QDate, QTime
-from services.asistencia_service import asistencia_service
+from services.rrhh.asistencia_service import asistencia_service
 
 
 class EditarAsistenciaDialog(QDialog):

@@ -75,7 +75,7 @@ class FacturadorView(QWidget):
             self._lbl_error.setText("Ingrese un codigo")
             return
 
-        from services.facturador_config_service import facturador_config_service
+        from services.datos.facturador_config_service import facturador_config_service
         config = facturador_config_service.obtener_por_codigo(codigo)
         if not config:
             self._lbl_error.setText(f"Facturador '{codigo}' no encontrado. Configurelo en Ventas.")
@@ -118,7 +118,7 @@ class FacturadorView(QWidget):
         top.addStretch()
 
         try:
-            from services.auth_service import auth_service
+            from services.core.auth_service import auth_service
             if auth_service.current_user:
                 lbl_cajero = QLabel(f"Cajero: {auth_service.current_user.nombre_completo}")
                 lbl_cajero.setStyleSheet("font-size: 11px; color: #888;")
@@ -368,7 +368,7 @@ class FacturadorView(QWidget):
             total_items += item["cantidad"]
 
         try:
-            from services.empresa_service import empresa_service
+            from services.core.empresa_service import empresa_service
             pais = empresa_service.obtener("cotizacion_pais") or "Venezuela"
             iva_pct = 16 if pais == "Venezuela" else 21
         except Exception:
@@ -388,7 +388,7 @@ class FacturadorView(QWidget):
             return
 
         try:
-            from services.empresa_service import empresa_service
+            from services.core.empresa_service import empresa_service
             pais = empresa_service.obtener("cotizacion_pais") or "Venezuela"
             iva_pct = 16 if pais == "Venezuela" else 21
         except Exception:
@@ -402,7 +402,7 @@ class FacturadorView(QWidget):
             return
 
         try:
-            from services.finanzas_service import finanzas_service
+            from services.finanzas.finanzas_service import finanzas_service
             from services.inventario_service import inventario_service
 
             items_factura = [{"descripcion": i["nombre"], "cantidad": i["cantidad"], "precio_unitario": i["precio"]} for i in self._items]

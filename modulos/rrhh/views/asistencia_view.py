@@ -11,11 +11,11 @@ from ui.components.data_table import DataTable
 from modulos.rrhh.views.editar_asistencia_dialog import EditarAsistenciaDialog
 from modulos.rrhh.views.registro_manual_dialog import RegistroManualDialog
 from modulos.rrhh.views.calendario_dialog import CalendarioDialog
-from services.asistencia_service import asistencia_service
-from services.permiso_ausencia_service import permiso_ausencia_service
-from services.empleado_service import empleado_service
-from services.export_service import exportar_excel
-from services.import_fichadas_service import importar_fichadas, pre_scan_xlsx
+from services.rrhh.asistencia_service import asistencia_service
+from services.rrhh.permiso_ausencia_service import permiso_ausencia_service
+from services.rrhh.empleado_service import empleado_service
+from services.herramientas.export_service import exportar_excel
+from services.rrhh.import_fichadas_service import importar_fichadas, pre_scan_xlsx
 import os
 
 

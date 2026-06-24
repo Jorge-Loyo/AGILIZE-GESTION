@@ -22,7 +22,7 @@ class TestRendimiento:
 
     def test_listar_clientes_rendimiento(self):
         """Listar clientes debe tardar menos de 1 segundo."""
-        from services.datos_service import datos_service
+        from services.datos.datos_service import datos_service
         start = time.time()
         for _ in range(100):
             datos_service.listar_clientes()
@@ -31,7 +31,7 @@ class TestRendimiento:
 
     def test_listar_proveedores_rendimiento(self):
         """Listar proveedores debe tardar menos de 1 segundo."""
-        from services.datos_service import datos_service
+        from services.datos.datos_service import datos_service
         start = time.time()
         for _ in range(100):
             datos_service.listar_proveedores()
@@ -49,7 +49,7 @@ class TestRendimiento:
 
     def test_kpis_rendimiento(self):
         """KPIs generales deben calcularse en menos de 2 segundos."""
-        from services.reportes_service import reportes_service
+        from services.herramientas.reportes_service import reportes_service
         start = time.time()
         for _ in range(10):
             reportes_service.kpis_generales()
@@ -67,7 +67,7 @@ class TestRendimiento:
 
     def test_movimientos_cuenta_rendimiento(self):
         """Listar movimientos de cuenta debe ser rapido."""
-        from services.cuentas_service import cuentas_service
+        from services.finanzas.cuentas_service import cuentas_service
         start = time.time()
         for _ in range(100):
             cuentas_service.listar_movimientos("cliente", 1)
@@ -76,7 +76,7 @@ class TestRendimiento:
 
     def test_listar_facturas_rendimiento(self):
         """Listar facturas debe tardar menos de 1 segundo."""
-        from services.finanzas_service import finanzas_service
+        from services.finanzas.finanzas_service import finanzas_service
         start = time.time()
         for _ in range(50):
             finanzas_service.listar_facturas()
@@ -85,7 +85,7 @@ class TestRendimiento:
 
     def test_listar_asientos_rendimiento(self):
         """Listar asientos contables debe ser rapido."""
-        from services.finanzas_service import finanzas_service
+        from services.finanzas.finanzas_service import finanzas_service
         start = time.time()
         for _ in range(50):
             finanzas_service.listar_asientos()
@@ -94,7 +94,7 @@ class TestRendimiento:
 
     def test_ventas_por_mes_rendimiento(self):
         """Reporte de ventas por mes debe tardar menos de 2 segundos."""
-        from services.reportes_service import reportes_service
+        from services.herramientas.reportes_service import reportes_service
         start = time.time()
         for _ in range(10):
             reportes_service.ventas_por_mes(12)
@@ -135,7 +135,7 @@ class TestSeguridad:
 
     def test_sql_injection_busqueda_clientes(self):
         """Busqueda de clientes no debe ser vulnerable a SQL injection."""
-        from services.datos_service import datos_service
+        from services.datos.datos_service import datos_service
         payloads = [
             "'; DROP TABLE clientes; --",
             "' OR '1'='1' --",
@@ -154,7 +154,7 @@ class TestSeguridad:
 
     def test_sql_injection_busqueda_proveedores(self):
         """Busqueda de proveedores no debe ser vulnerable a SQL injection."""
-        from services.datos_service import datos_service
+        from services.datos.datos_service import datos_service
         payloads = [
             "'; DROP TABLE proveedores; --",
             "' OR 1=1 --",
@@ -171,7 +171,7 @@ class TestSeguridad:
 
     def test_xss_en_datos_cliente(self):
         """Datos con scripts maliciosos no deben ejecutarse (se guardan como texto)."""
-        from services.datos_service import datos_service
+        from services.datos.datos_service import datos_service
         xss_payloads = [
             "<script>alert('xss')</script>",
             "<img src=x onerror=alert(1)>",
@@ -187,7 +187,7 @@ class TestSeguridad:
 
     def test_overflow_montos(self):
         """Montos extremos no deben causar crash."""
-        from services.cuentas_service import cuentas_service
+        from services.finanzas.cuentas_service import cuentas_service
         # Monto negativo
         with pytest.raises(ValueError):
             cuentas_service.registrar_debe("cliente", 1, -99999, "test negativo")
@@ -198,7 +198,7 @@ class TestSeguridad:
 
     def test_asiento_descuadrado_no_permitido(self):
         """No debe permitir crear asientos descuadrados."""
-        from services.finanzas_service import finanzas_service
+        from services.finanzas.finanzas_service import finanzas_service
         cuentas = finanzas_service.listar_cuentas()
         cuentas_no_grupo = [c for c in cuentas if not c.es_grupo]
         if len(cuentas_no_grupo) >= 2:
@@ -211,7 +211,7 @@ class TestSeguridad:
 
     def test_facturador_codigo_inexistente(self):
         """Codigo de facturador inexistente no debe dar acceso."""
-        from services.facturador_config_service import facturador_config_service
+        from services.datos.facturador_config_service import facturador_config_service
         result = facturador_config_service.obtener_por_codigo("HACK001")
         assert result is None
 
@@ -234,7 +234,7 @@ class TestSeguridad:
 
     def test_caja_doble_apertura(self):
         """No debe permitir abrir dos cajas simultaneas."""
-        from services.finanzas_service import finanzas_service
+        from services.finanzas.finanzas_service import finanzas_service
         if finanzas_service.caja_actual():
             finanzas_service.cerrar_caja(0)
         finanzas_service.abrir_caja(100)

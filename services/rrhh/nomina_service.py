@@ -32,7 +32,7 @@ class NominaService:
             return query.order_by(Liquidacion.fecha_liquidacion.desc()).all()
 
     def liquidar(self, empleado_id: int, periodo: str, sueldo_basico: Decimal, conceptos_ids: list[int]) -> Liquidacion:
-        from services.cierre_service import cierre_service
+        from services.rrhh.cierre_service import cierre_service
 
         # Validar que no esté ya liquidado
         if cierre_service.liquidacion_cerrada(empleado_id, periodo):
@@ -49,7 +49,7 @@ class NominaService:
             detalles = []
 
             # Obtener dias trabajados para conceptos por_dia
-            from services.calculo_asistencia_service import calculo_asistencia_service
+            from services.rrhh.calculo_asistencia_service import calculo_asistencia_service
             calc_asist = calculo_asistencia_service.calcular_bruto_periodo(empleado_id, periodo)
             dias_trabajados = calc_asist["dias_trabajados"]
 
@@ -77,7 +77,7 @@ class NominaService:
                 ))
 
             # Descontar adelantos pendientes
-            from services.adelanto_service import adelanto_service
+            from services.rrhh.adelanto_service import adelanto_service
             descuento_adelantos = adelanto_service.descontar_en_liquidacion(empleado_id)
             if descuento_adelantos > 0:
                 total_deducciones += descuento_adelantos
@@ -99,14 +99,14 @@ class NominaService:
             db.refresh(liq)
 
             # Registrar remuneración bruta para SAC
-            from services.sac_service import sac_service
+            from services.rrhh.sac_service import sac_service
             sac_service.registrar_mes(empleado_id, periodo, total_haberes)
 
             # Cerrar liquidación del período
             cierre_service.cerrar_liquidacion(empleado_id, periodo)
 
             # Auditoria
-            from services.audit_service import registrar_auditoria
+            from services.core.audit_service import registrar_auditoria
             registrar_auditoria("LIQUIDAR", "liquidaciones", liq.id, f"Periodo {periodo} - Neto: {neto}")
 
             return liq

@@ -292,7 +292,7 @@ class RequerimientoDialog(QDialog):
         # Obtener usuario actual como solicitante
         solicitante = ""
         try:
-            from services.auth_service import auth_service
+            from services.core.auth_service import auth_service
             if auth_service.current_user:
                 solicitante = auth_service.current_user.nombre_completo
         except Exception:

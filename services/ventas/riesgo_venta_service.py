@@ -6,7 +6,7 @@ from models import sucursal, usuario, empleado, rol, permiso  # noqa
 from models.datos import Cliente
 from models.inventario import Producto
 from models.comercial import FacturaVenta
-from services.auth_service import auth_service
+from services.core.auth_service import auth_service
 
 
 def _hoy() -> date:

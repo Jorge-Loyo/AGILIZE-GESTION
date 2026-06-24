@@ -77,7 +77,7 @@ class LimpiadorView(QWidget):
 
         # Formula info
         try:
-            from services.empresa_service import empresa_service
+            from services.core.empresa_service import empresa_service
             iva_val = empresa_service.obtener("iva_porcentaje") or "16"
         except Exception:
             iva_val = "16"
@@ -157,7 +157,7 @@ class LimpiadorView(QWidget):
 
             def run(self):
                 try:
-                    from services.limpiador_service import limpiador_service
+                    from services.herramientas.limpiador_service import limpiador_service
                     limpiador_service.cargar(self._ruta)
                     self.finished.emit(limpiador_service)
                 except Exception as e:
@@ -170,10 +170,10 @@ class LimpiadorView(QWidget):
 
     def _obtener_cotizacion_o_pedir(self) -> float | None:
         """Obtiene cotizacion del dia. Si no hay, abre modal para actualizar."""
-        from services.cotizacion_service import (
+        from services.herramientas.cotizacion_service import (
             obtener_cotizacion_hoy, obtener_ultima_cotizacion, PAISES
         )
-        from services.empresa_service import empresa_service
+        from services.core.empresa_service import empresa_service
 
         pais = empresa_service.obtener("cotizacion_pais") or "Venezuela"
 
@@ -231,7 +231,7 @@ class LimpiadorView(QWidget):
             btn_actualizar.setEnabled(False)
             btn_actualizar.setText("  Consultando...")
             try:
-                from services.cotizacion_service import actualizar_cotizacion
+                from services.herramientas.cotizacion_service import actualizar_cotizacion
                 r = actualizar_cotizacion(pais)
                 resultado["valor"] = r["valor"]
                 dlg.accept()
@@ -319,7 +319,7 @@ class LimpiadorView(QWidget):
             return
 
         try:
-            from services.limpiador_service import limpiador_service
+            from services.herramientas.limpiador_service import limpiador_service
             result = limpiador_service.exportar(ruta, cotizacion=self._cotizacion_actual)
             QMessageBox.information(
                 self, "Exportacion completada",
@@ -338,7 +338,7 @@ class LimpiadorView(QWidget):
             return
 
         try:
-            from services.limpiador_service import limpiador_service
+            from services.herramientas.limpiador_service import limpiador_service
             import math
 
             master = limpiador_service.master

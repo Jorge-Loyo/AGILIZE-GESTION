@@ -6,8 +6,8 @@ from PySide6.QtCore import Qt, Signal, QSize
 from PySide6.QtGui import QPixmap
 import qtawesome as qta
 from ui.theme_manager import theme_manager
-from services.logo_service import get_dev_logo_path
-from services.empresa_service import empresa_service
+from services.core.logo_service import get_dev_logo_path
+from services.core.empresa_service import empresa_service
 
 ICONOS_MODULO = {
     "empleados": "fa5s.user-friends",

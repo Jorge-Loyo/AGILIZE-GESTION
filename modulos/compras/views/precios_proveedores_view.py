@@ -95,7 +95,7 @@ class PreciosProveedoresView(QWidget):
         layout.addLayout(bot)
 
     def _cargar(self):
-        from services.compras_service import compras_service
+        from services.compras.compras_service import compras_service
         prov_id = self._combo_prov.currentData()
         listas = compras_service.listar_listas_precio(proveedor_id=prov_id)
         self._tabla.setRowCount(len(listas))
@@ -114,7 +114,7 @@ class PreciosProveedoresView(QWidget):
         dlg = _NuevaListaDialog(self)
         if dlg.exec() == QDialog.Accepted:
             data = dlg.datos()
-            from services.compras_service import compras_service
+            from services.compras.compras_service import compras_service
             compras_service.crear_lista_precio(
                 proveedor_id=data["proveedor_id"],
                 nombre=data["nombre"],
@@ -158,7 +158,7 @@ class PreciosProveedoresView(QWidget):
 
             import os
             nombre_lista = os.path.splitext(os.path.basename(path))[0]
-            from services.compras_service import compras_service
+            from services.compras.compras_service import compras_service
             compras_service.crear_lista_precio(
                 proveedor_id=prov_id, nombre=nombre_lista, items=items
             )
@@ -182,7 +182,7 @@ class PreciosProveedoresView(QWidget):
             return
         lista_id = int(self._tabla.item(row, 0).text())
         if QMessageBox.question(self, "Confirmar", "Eliminar esta lista de precios?") == QMessageBox.Yes:
-            from services.compras_service import compras_service
+            from services.compras.compras_service import compras_service
             compras_service.eliminar_lista_precio(lista_id)
             self._cargar()
 
@@ -292,7 +292,7 @@ class _DetalleListaDialog(QDialog):
         self.setMinimumSize(700, 400)
         layout = QVBoxLayout(self)
 
-        from services.compras_service import compras_service
+        from services.compras.compras_service import compras_service
         detalles = compras_service.obtener_lista_detalles(lista_id)
 
         tabla = QTableWidget()

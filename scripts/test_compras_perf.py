@@ -4,7 +4,7 @@ import sys
 sys.path.insert(0, '.')
 
 def test_rendimiento():
-    from services.compras_service import compras_service
+    from services.compras.compras_service import compras_service
     print("=" * 60)
     print("TESTS DE RENDIMIENTO - MODULO COMPRAS")
     print("=" * 60)
@@ -59,7 +59,7 @@ def test_rendimiento():
 
 
 def test_seguridad():
-    from services.compras_service import compras_service
+    from services.compras.compras_service import compras_service
     print("\n" + "=" * 60)
     print("TESTS DE SEGURIDAD - SQL INJECTION")
     print("=" * 60)
@@ -128,7 +128,7 @@ def test_seguridad():
 
 
 def test_integridad():
-    from services.compras_service import compras_service
+    from services.compras.compras_service import compras_service
     print("\n" + "=" * 60)
     print("TESTS DE INTEGRIDAD - LOGICA DE NEGOCIO")
     print("=" * 60)

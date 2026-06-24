@@ -5,7 +5,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 import qtawesome as qta
-from services.finanzas_service import finanzas_service
+from services.finanzas.finanzas_service import finanzas_service
 
 
 class CajaView(QWidget):

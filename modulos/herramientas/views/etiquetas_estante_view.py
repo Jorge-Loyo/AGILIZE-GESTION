@@ -187,7 +187,7 @@ class EtiquetasEstanteView(QWidget):
             return
 
         try:
-            from services.etiquetas_service import generar_etiquetas_estante
+            from services.herramientas.etiquetas_service import generar_etiquetas_estante
             tamano_idx = self._combo_tamano.currentIndex()
             tamanos = [(3, 5), (5, 7), (7, 10)]
             tamano = tamanos[tamano_idx]

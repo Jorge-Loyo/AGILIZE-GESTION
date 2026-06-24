@@ -4,8 +4,8 @@ from PySide6.QtWidgets import (
     QTableWidget, QTableWidgetItem, QHeaderView,
 )
 from PySide6.QtCore import Qt
-from services.aprobacion_extras_service import aprobacion_extras_service
-from services.auth_service import auth_service
+from services.rrhh.aprobacion_extras_service import aprobacion_extras_service
+from services.core.auth_service import auth_service
 
 
 class AprobacionExtrasView(QWidget):

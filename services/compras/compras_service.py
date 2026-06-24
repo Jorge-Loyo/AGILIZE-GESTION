@@ -13,8 +13,8 @@ from models.compras import (
     CotizacionCompra, CotizacionCompraDetalle,
     ReglaAprobacion, AprobacionCompra,
 )
-from services.auth_service import auth_service
-from services.empresa_service import empresa_service
+from services.core.auth_service import auth_service
+from services.core.empresa_service import empresa_service
 
 
 def _hoy() -> date:

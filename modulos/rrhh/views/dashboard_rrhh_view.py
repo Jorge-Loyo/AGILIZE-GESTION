@@ -4,9 +4,9 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 from decimal import Decimal
-from services.dashboard_service import dashboard_service
-from services.calculo_asistencia_service import calculo_asistencia_service
-from services.empleado_service import empleado_service
+from services.core.dashboard_service import dashboard_service
+from services.rrhh.calculo_asistencia_service import calculo_asistencia_service
+from services.rrhh.empleado_service import empleado_service
 
 
 class DashboardRRHHView(QWidget):

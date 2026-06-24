@@ -10,7 +10,7 @@ from models.inventario import (  # noqa: F401
     Producto, Deposito, UbicacionDeposito, StockDeposito, MovimientoStock,
     LoteProducto, NumeroSerie, TomaInventario, TomaInventarioDetalle,
 )
-from services.auth_service import auth_service  # noqa: F401
+from services.core.auth_service import auth_service  # noqa: F401
 
 
 def _hoy() -> date:

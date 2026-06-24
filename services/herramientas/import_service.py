@@ -121,7 +121,7 @@ def importar_empleados(filepath: str) -> dict:
                 sueldo_mensual = _parse_numero(datos.get("sueldo_mensual"))
 
                 # Jornada por defecto desde config
-                from services.empresa_service import empresa_service
+                from services.core.empresa_service import empresa_service
                 default_entrada = empresa_service.obtener("jornada_entrada") or "08:00"
                 default_salida = empresa_service.obtener("jornada_salida") or "17:00"
 

@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (
     QTableWidget, QTableWidgetItem, QHeaderView,
 )
 from PySide6.QtCore import Qt, Signal
-from services.empleado_service import empleado_service
+from services.rrhh.empleado_service import empleado_service
 
 
 class EmpleadoDetalleDialog(QDialog):

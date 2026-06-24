@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 import qtawesome as qta
-from services.cuentas_service import cuentas_service
+from services.finanzas.cuentas_service import cuentas_service
 
 
 class CtaCorrienteView(QWidget):
@@ -107,11 +107,11 @@ class CtaCorrienteView(QWidget):
         self._combo_entidad.clear()
         self._combo_entidad.addItem("-- Seleccionar --", None)
         if self._tipo == "cliente":
-            from services.datos_service import datos_service
+            from services.datos.datos_service import datos_service
             for c in datos_service.listar_clientes():
                 self._combo_entidad.addItem(c.razon_social, c.id)
         else:
-            from services.datos_service import datos_service
+            from services.datos.datos_service import datos_service
             for p in datos_service.listar_proveedores():
                 self._combo_entidad.addItem(p.razon_social, p.id)
 
@@ -205,7 +205,7 @@ class CtaCorrienteView(QWidget):
             return
 
         try:
-            from services.estado_cuenta_service import generar_estado_cuenta_pdf
+            from services.finanzas.estado_cuenta_service import generar_estado_cuenta_pdf
             cliente_nombre = self._combo_entidad.currentText()
             movimientos = cuentas_service.listar_movimientos(self._tipo, self._entidad_id)
             saldo = cuentas_service.obtener_saldo(self._tipo, self._entidad_id)
@@ -227,7 +227,7 @@ class CtaCorrienteView(QWidget):
         cliente_nombre = self._combo_entidad.currentText()
 
         # Obtener telefono del cliente
-        from services.datos_service import datos_service
+        from services.datos.datos_service import datos_service
         cliente = datos_service.obtener_cliente(self._entidad_id)
         telefono = ""
         if cliente:
@@ -267,7 +267,7 @@ class CtaCorrienteView(QWidget):
         cliente_nombre = self._combo_entidad.currentText()
 
         # Obtener email del cliente
-        from services.datos_service import datos_service
+        from services.datos.datos_service import datos_service
         cliente = datos_service.obtener_cliente(self._entidad_id)
         email = cliente.email if cliente else ""
 

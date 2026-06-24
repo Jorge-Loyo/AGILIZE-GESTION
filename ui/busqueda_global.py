@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, Signal, QTimer
 from PySide6.QtGui import QShortcut, QKeySequence
-from services.empleado_service import empleado_service
+from services.rrhh.empleado_service import empleado_service
 
 
 class BusquedaGlobalWidget(QWidget):

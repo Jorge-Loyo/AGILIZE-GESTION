@@ -9,11 +9,11 @@ from PySide6.QtGui import QPixmap
 from decimal import Decimal
 from pathlib import Path
 import shutil
-from services.nomina_service import nomina_service
+from services.rrhh.nomina_service import nomina_service
 from modulos.rrhh.views.editar_concepto_dialog import EditarConceptoDialog
-from services.config_nomina_service import config_nomina_service
-from services.permiso_ausencia_service import permiso_ausencia_service
-from services.empresa_service import empresa_service
+from services.rrhh.config_nomina_service import config_nomina_service
+from services.rrhh.permiso_ausencia_service import permiso_ausencia_service
+from services.core.empresa_service import empresa_service
 from core.config import BASE_DIR
 
 
@@ -644,7 +644,7 @@ class ConfigRRHHView(QWidget):
         return page
 
     def _cargar_feriados(self):
-        from services.asistencia_service import asistencia_service
+        from services.rrhh.asistencia_service import asistencia_service
         anio = self.feriado_anio.value()
         feriados = asistencia_service.listar_feriados(anio=anio)
         self._feriados = feriados
@@ -660,7 +660,7 @@ class ConfigRRHHView(QWidget):
             QMessageBox.warning(self, "Error", "La descripcion es obligatoria.")
             return
         try:
-            from services.asistencia_service import asistencia_service
+            from services.rrhh.asistencia_service import asistencia_service
             asistencia_service.agregar_feriado(fecha, desc)
             self.feriado_desc.clear()
             self._cargar_feriados()

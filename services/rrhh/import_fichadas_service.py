@@ -6,7 +6,7 @@ from datetime import date, time, datetime
 from pathlib import Path
 from core.database import get_db
 from models.empleado import Empleado
-from services.asistencia_service import asistencia_service
+from services.rrhh.asistencia_service import asistencia_service
 
 
 def importar_fichadas(filepath: str, mapeo: dict = None) -> dict:

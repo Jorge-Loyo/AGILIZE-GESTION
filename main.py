@@ -8,7 +8,7 @@ class AppController:
         from PySide6.QtGui import QIcon
         from core.config import settings
         from ui.theme_manager import theme_manager
-        from services.logo_service import get_app_icon_path
+        from services.core.logo_service import get_app_icon_path
 
         # Windows: forzar que el icono se muestre en la barra de tareas
         try:
@@ -133,7 +133,7 @@ def _run_seed():
 
         # Configurar password de desarrollador por defecto
         try:
-            from services.empresa_service import empresa_service
+            from services.core.empresa_service import empresa_service
             if not empresa_service.obtener("dev_password"):
                 empresa_service.guardar("dev_password", "agilize2025")
         except Exception:

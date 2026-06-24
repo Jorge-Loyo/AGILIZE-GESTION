@@ -8,9 +8,9 @@ import qtawesome as qta
 from ui.components.data_table import DataTable
 from modulos.rrhh.views.form_empleado import FormEmpleado
 from modulos.rrhh.views.detalle_empleado_dialog import EmpleadoDetalleDialog
-from services.empleado_service import empleado_service
-from services.export_service import exportar_excel
-from services.import_service import importar_empleados, generar_plantilla
+from services.rrhh.empleado_service import empleado_service
+from services.herramientas.export_service import exportar_excel
+from services.herramientas.import_service import importar_empleados, generar_plantilla
 import os
 
 
@@ -397,7 +397,7 @@ class EmpleadosView(QWidget):
 
     def _generar_formulario_alta(self):
         try:
-            from services.formulario_alta_service import generar_formulario_alta
+            from services.rrhh.formulario_alta_service import generar_formulario_alta
             filepath = generar_formulario_alta()
             os.startfile(filepath)
         except Exception as e:

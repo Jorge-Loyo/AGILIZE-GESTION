@@ -8,7 +8,7 @@ from models.finanzas import (
     CuentaBancaria, MovimientoBanco,
     Caja, MovimientoCaja,
 )
-from services.auth_service import auth_service
+from services.core.auth_service import auth_service
 
 
 class FinanzasService:
