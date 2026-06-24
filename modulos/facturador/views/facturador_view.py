@@ -83,6 +83,13 @@ class FacturadorView(QWidget):
 
         sidebar_layout.addStretch()
 
+        btn_manual = QPushButton("  Manual de uso")
+        btn_manual.setIcon(qta.icon("fa5s.question-circle", color="#D4AF37"))
+        btn_manual.setCursor(Qt.PointingHandCursor)
+        btn_manual.setStyleSheet("QPushButton { background-color: transparent; color: #D4AF37; border: 1px solid #D4AF37; border-radius: 4px; padding: 6px 10px; } QPushButton:hover { background-color: #D4AF37; color: #0f0f0f; }")
+        btn_manual.clicked.connect(self._ver_manual)
+        sidebar_layout.addWidget(btn_manual)
+
         # Info caja
         self._lbl_caja = QLabel("Sin turno abierto")
         self._lbl_caja.setStyleSheet("font-size: 10px; color: #666;")
@@ -165,6 +172,15 @@ class FacturadorView(QWidget):
             btn.setProperty("active", i == index)
             btn.style().unpolish(btn)
             btn.style().polish(btn)
+
+    def _ver_manual(self):
+        from ui.manual_uso_view import ManualUsoView, MANUAL_FACTURADOR
+        if not hasattr(self, '_manual_idx'):
+            manual = ManualUsoView(MANUAL_FACTURADOR, "Manual - Facturador")
+            self._manual_idx = self.stack.addWidget(manual)
+        self.stack.setCurrentIndex(self._manual_idx)
+        for btn in self._buttons:
+            btn.setChecked(False)
 
     # ===================
     # POS

@@ -69,6 +69,13 @@ class ComprasView(QWidget):
             self.stack.addWidget(self._create_submodule(sub["codigo"]))
 
         sidebar_layout.addStretch()
+        btn_manual = QPushButton("  Manual de uso")
+        btn_manual.setIcon(qta.icon("fa5s.question-circle", color="#D4AF37"))
+        btn_manual.setCursor(Qt.PointingHandCursor)
+        btn_manual.setStyleSheet("QPushButton { background-color: transparent; color: #D4AF37; border: 1px solid #D4AF37; border-radius: 4px; padding: 6px 10px; } QPushButton:hover { background-color: #D4AF37; color: #0f0f0f; }")
+        btn_manual.clicked.connect(self._ver_manual)
+        sidebar_layout.addWidget(btn_manual)
+        sidebar_layout.addSpacerItem(QSpacerItem(0, 4, QSizePolicy.Minimum, QSizePolicy.Fixed))
         btn_theme = QPushButton("  Cambiar modo")
         btn_theme.setIcon(qta.icon("fa5s.adjust", color="#8a8a8a"))
         btn_theme.setCursor(Qt.PointingHandCursor)
@@ -130,3 +137,12 @@ class ComprasView(QWidget):
             btn.setProperty("active", i == index)
             btn.style().unpolish(btn)
             btn.style().polish(btn)
+
+    def _ver_manual(self):
+        from ui.manual_uso_view import ManualUsoView, MANUAL_COMPRAS
+        if not hasattr(self, '_manual_idx'):
+            manual = ManualUsoView(MANUAL_COMPRAS, "Manual - Compras")
+            self._manual_idx = self.stack.addWidget(manual)
+        self.stack.setCurrentIndex(self._manual_idx)
+        for btn in self._buttons:
+            btn.setChecked(False)
