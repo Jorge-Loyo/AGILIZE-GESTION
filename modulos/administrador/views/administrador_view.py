@@ -454,92 +454,138 @@ class AdministradorView(QWidget):
         self._cargar_roles_tabla()
 
     def _build_matriz_permisos(self) -> QWidget:
-        """Tab con matriz visual de permisos que lee/guarda en BD."""
+        """Tab con matriz de permisos: selector de rol + tabla modulo x acciones."""
         w = QWidget()
         lay = QVBoxLayout(w)
-        lay.setContentsMargins(8, 8, 8, 8)
+        lay.setContentsMargins(12, 12, 12, 12)
+        lay.setSpacing(10)
 
-        info = QLabel("Los checkboxes controlan el acceso real de cada rol. Los cambios se guardan al marcar/desmarcar.")
-        info.setStyleSheet("font-size: 11px; color: #888;")
+        # Selector de rol
+        row_sel = QHBoxLayout()
+        row_sel.addWidget(QLabel("Rol:"))
+        self._combo_rol_permisos = __import__('PySide6.QtWidgets', fromlist=['QComboBox']).QComboBox()
+        self._combo_rol_permisos.setFixedHeight(30)
+        self._combo_rol_permisos.setMinimumWidth(200)
+        row_sel.addWidget(self._combo_rol_permisos)
+        row_sel.addStretch()
+        self._lbl_rol_info = QLabel("")
+        self._lbl_rol_info.setStyleSheet("font-size: 11px; color: #888;")
+        row_sel.addWidget(self._lbl_rol_info)
+        lay.addLayout(row_sel)
+
+        info = QLabel("Marca las acciones permitidas para este rol en cada modulo. Los cambios se guardan automaticamente.")
+        info.setStyleSheet("font-size: 11px; color: #666;")
         lay.addWidget(info)
 
-        MODULOS_APP = [
+        # Tabla: filas=modulos, columnas=VER/CREAR/EDITAR/ELIMINAR
+        self._tabla_matriz = QTableWidget()
+        self._tabla_matriz.setColumnCount(5)
+        self._tabla_matriz.setHorizontalHeaderLabels(["Modulo", "Ver", "Crear", "Editar", "Eliminar"])
+        self._tabla_matriz.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
+        for col in range(1, 5):
+            self._tabla_matriz.horizontalHeader().setSectionResizeMode(col, QHeaderView.Fixed)
+            self._tabla_matriz.setColumnWidth(col, 80)
+        self._tabla_matriz.setAlternatingRowColors(True)
+        self._tabla_matriz.verticalHeader().setVisible(False)
+        self._tabla_matriz.setEditTriggers(QTableWidget.NoEditTriggers)
+        lay.addWidget(self._tabla_matriz, 1)
+
+        # Definir modulos
+        self._MODULOS_PERMISOS = [
             ("compras", "Compras"), ("inventario", "Inventario"), ("ventas", "Ventas"),
             ("facturador", "Facturador"), ("empleados", "RRHH"), ("cuentas", "Cuentas"),
             ("finanzas", "Finanzas"), ("reportes", "Reportes"), ("herramientas", "Herramientas"),
             ("importador", "Importador"), ("administrador", "Administrador"), ("admin", "Configuracion"),
         ]
-        ACCIONES = ["ver", "crear", "editar", "eliminar"]
+        self._ACCIONES_PERMISOS = ["ver", "crear", "editar", "eliminar"]
 
-        tabla_p = QTableWidget()
-        lay.addWidget(tabla_p, 1)
+        # Asegurar permisos en BD y cargar mapa
+        self._asegurar_permisos_bd()
 
+        # Cargar roles en combo
+        self._cargar_combo_roles()
+        self._combo_rol_permisos.currentIndexChanged.connect(self._cargar_matriz_rol)
+
+        # Cargar matriz del primer rol
+        if self._combo_rol_permisos.count() > 0:
+            self._cargar_matriz_rol()
+
+        return w
+
+    def _asegurar_permisos_bd(self):
+        """Crea modulos y permisos que no existan en BD."""
         from core.database import get_db
-        from models.rol import Rol
-        from models.permiso import Permiso, RolPermiso, Modulo
-
+        from models.permiso import Permiso, Modulo
+        self._perm_map = {}  # (modulo_codigo, accion) -> permiso_id
         with get_db() as db:
-            roles = db.query(Rol).filter(Rol.activo.is_(True)).order_by(Rol.id).all()
-            roles_data = [(r.id, r.nombre) for r in roles]
-
-            # Asegurar que existen los modulos y permisos en BD
-            for mod_codigo, mod_nombre in MODULOS_APP:
+            for mod_codigo, mod_nombre in self._MODULOS_PERMISOS:
                 modulo = db.query(Modulo).filter(Modulo.codigo == mod_codigo).first()
                 if not modulo:
                     modulo = Modulo(codigo=mod_codigo, nombre=mod_nombre, activo=True)
                     db.add(modulo)
                     db.flush()
-                for accion in ACCIONES:
+                for accion in self._ACCIONES_PERMISOS:
                     perm = db.query(Permiso).filter(Permiso.modulo_id == modulo.id, Permiso.accion == accion).first()
                     if not perm:
-                        db.add(Permiso(modulo_id=modulo.id, accion=accion))
+                        perm = Permiso(modulo_id=modulo.id, accion=accion)
+                        db.add(perm)
+                        db.flush()
+                    self._perm_map[(mod_codigo, accion)] = perm.id
 
-            # Leer permisos asignados
-            permisos_asignados = set()
-            for rp in db.query(RolPermiso).all():
-                permisos_asignados.add((rp.rol_id, rp.permiso_id))
+    def _cargar_combo_roles(self):
+        from core.database import get_db
+        from models.rol import Rol
+        self._combo_rol_permisos.clear()
+        with get_db() as db:
+            roles = db.query(Rol).filter(Rol.activo.is_(True)).order_by(Rol.id).all()
+            for r in roles:
+                self._combo_rol_permisos.addItem(f"{r.nombre}", r.id)
 
-            # Mapa permiso_id por (modulo_codigo, accion)
-            perm_map = {}
-            for mod_codigo, _ in MODULOS_APP:
-                modulo = db.query(Modulo).filter(Modulo.codigo == mod_codigo).first()
-                if modulo:
-                    for perm in db.query(Permiso).filter(Permiso.modulo_id == modulo.id).all():
-                        perm_map[(mod_codigo, perm.accion)] = perm.id
+    def _cargar_matriz_rol(self):
+        """Carga checkboxes segun permisos del rol seleccionado."""
+        rol_id = self._combo_rol_permisos.currentData()
+        if not rol_id:
+            return
+
+        es_admin = (rol_id == 1)
+        self._lbl_rol_info.setText("(Administrador: acceso total, no editable)" if es_admin else "")
+
+        # Leer permisos asignados a este rol
+        from core.database import get_db
+        from models.permiso import RolPermiso
+        with get_db() as db:
+            asignados = set(
+                rp.permiso_id for rp in db.query(RolPermiso).filter(RolPermiso.rol_id == rol_id).all()
+            )
 
         # Construir tabla
-        n_cols = 1 + len(roles_data) * len(ACCIONES)
-        tabla_p.setColumnCount(n_cols)
-        headers = ["Modulo"]
-        for _, nombre in roles_data:
-            for acc in ACCIONES:
-                headers.append(f"{nombre[:6]}\n{acc}")
-        tabla_p.setHorizontalHeaderLabels(headers)
-        tabla_p.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
-        tabla_p.setRowCount(len(MODULOS_APP))
-        tabla_p.verticalHeader().setVisible(False)
+        self._tabla_matriz.setRowCount(len(self._MODULOS_PERMISOS))
+        for i, (mod_codigo, mod_nombre) in enumerate(self._MODULOS_PERMISOS):
+            # Columna modulo
+            item_mod = QTableWidgetItem(f"  {mod_nombre}")
+            item_mod.setFlags(item_mod.flags() & ~__import__('PySide6.QtCore', fromlist=['Qt']).Qt.ItemIsSelectable)
+            self._tabla_matriz.setItem(i, 0, item_mod)
 
-        for i, (mod_codigo, mod_nombre) in enumerate(MODULOS_APP):
-            tabla_p.setItem(i, 0, QTableWidgetItem(mod_nombre))
-            for j, (rol_id, _) in enumerate(roles_data):
-                for k, acc in enumerate(ACCIONES):
-                    col = 1 + j * len(ACCIONES) + k
-                    chk = QCheckBox()
-                    perm_id = perm_map.get((mod_codigo, acc))
-                    # Admin siempre todo
-                    if rol_id == 1:
-                        chk.setChecked(True)
-                        chk.setEnabled(False)
-                    else:
-                        chk.setChecked((rol_id, perm_id) in permisos_asignados if perm_id else False)
-                        # Conectar para guardar al cambiar
-                        chk.toggled.connect(lambda checked, r=rol_id, p=perm_id: self._toggle_permiso(r, p, checked))
-                    tabla_p.setCellWidget(i, col, chk)
+            # Columnas de acciones
+            for k, accion in enumerate(self._ACCIONES_PERMISOS):
+                col = k + 1
+                perm_id = self._perm_map.get((mod_codigo, accion))
+                chk = QCheckBox()
+                chk.setStyleSheet("QCheckBox { margin-left: 25px; }")
 
-        return w
+                if es_admin:
+                    chk.setChecked(True)
+                    chk.setEnabled(False)
+                else:
+                    chk.setChecked(perm_id in asignados if perm_id else False)
+                    chk.toggled.connect(
+                        lambda checked, r=rol_id, p=perm_id: self._toggle_permiso(r, p, checked)
+                    )
+
+                self._tabla_matriz.setCellWidget(i, col, chk)
 
     def _toggle_permiso(self, rol_id: int, permiso_id: int, checked: bool):
-        """Guarda/elimina permiso en BD al marcar/desmarcar checkbox."""
+        """Guarda/elimina permiso en BD al marcar/desmarcar."""
         if not permiso_id:
             return
         from core.database import get_db
