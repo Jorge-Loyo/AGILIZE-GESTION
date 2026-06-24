@@ -454,12 +454,21 @@ class AdministradorView(QWidget):
         self._cargar_roles_tabla()
 
     def _build_matriz_permisos(self) -> QWidget:
-        """Tab con matriz visual de permisos."""
+        """Tab con matriz visual de permisos que lee/guarda en BD."""
         w = QWidget()
         lay = QVBoxLayout(w)
         lay.setContentsMargins(8, 8, 8, 8)
 
-        MODULOS_APP = ["Compras", "Inventario", "Ventas", "Facturador", "RRHH", "Cuentas", "Finanzas", "Reportes", "Herramientas", "Importador", "Administrador", "Configuracion"]
+        info = QLabel("Los checkboxes controlan el acceso real de cada rol. Los cambios se guardan al marcar/desmarcar.")
+        info.setStyleSheet("font-size: 11px; color: #888;")
+        lay.addWidget(info)
+
+        MODULOS_APP = [
+            ("compras", "Compras"), ("inventario", "Inventario"), ("ventas", "Ventas"),
+            ("facturador", "Facturador"), ("empleados", "RRHH"), ("cuentas", "Cuentas"),
+            ("finanzas", "Finanzas"), ("reportes", "Reportes"), ("herramientas", "Herramientas"),
+            ("importador", "Importador"), ("administrador", "Administrador"), ("admin", "Configuracion"),
+        ]
         ACCIONES = ["ver", "crear", "editar", "eliminar"]
 
         tabla_p = QTableWidget()
@@ -467,10 +476,38 @@ class AdministradorView(QWidget):
 
         from core.database import get_db
         from models.rol import Rol
+        from models.permiso import Permiso, RolPermiso, Modulo
+
         with get_db() as db:
             roles = db.query(Rol).filter(Rol.activo.is_(True)).order_by(Rol.id).all()
             roles_data = [(r.id, r.nombre) for r in roles]
 
+            # Asegurar que existen los modulos y permisos en BD
+            for mod_codigo, mod_nombre in MODULOS_APP:
+                modulo = db.query(Modulo).filter(Modulo.codigo == mod_codigo).first()
+                if not modulo:
+                    modulo = Modulo(codigo=mod_codigo, nombre=mod_nombre, activo=True)
+                    db.add(modulo)
+                    db.flush()
+                for accion in ACCIONES:
+                    perm = db.query(Permiso).filter(Permiso.modulo_id == modulo.id, Permiso.accion == accion).first()
+                    if not perm:
+                        db.add(Permiso(modulo_id=modulo.id, accion=accion))
+
+            # Leer permisos asignados
+            permisos_asignados = set()
+            for rp in db.query(RolPermiso).all():
+                permisos_asignados.add((rp.rol_id, rp.permiso_id))
+
+            # Mapa permiso_id por (modulo_codigo, accion)
+            perm_map = {}
+            for mod_codigo, _ in MODULOS_APP:
+                modulo = db.query(Modulo).filter(Modulo.codigo == mod_codigo).first()
+                if modulo:
+                    for perm in db.query(Permiso).filter(Permiso.modulo_id == modulo.id).all():
+                        perm_map[(mod_codigo, perm.accion)] = perm.id
+
+        # Construir tabla
         n_cols = 1 + len(roles_data) * len(ACCIONES)
         tabla_p.setColumnCount(n_cols)
         headers = ["Modulo"]
@@ -482,17 +519,36 @@ class AdministradorView(QWidget):
         tabla_p.setRowCount(len(MODULOS_APP))
         tabla_p.verticalHeader().setVisible(False)
 
-        for i, modulo in enumerate(MODULOS_APP):
-            tabla_p.setItem(i, 0, QTableWidgetItem(modulo))
+        for i, (mod_codigo, mod_nombre) in enumerate(MODULOS_APP):
+            tabla_p.setItem(i, 0, QTableWidgetItem(mod_nombre))
             for j, (rol_id, _) in enumerate(roles_data):
                 for k, acc in enumerate(ACCIONES):
                     col = 1 + j * len(ACCIONES) + k
                     chk = QCheckBox()
+                    perm_id = perm_map.get((mod_codigo, acc))
+                    # Admin siempre todo
                     if rol_id == 1:
                         chk.setChecked(True)
                         chk.setEnabled(False)
                     else:
-                        chk.setChecked(acc == "ver")
+                        chk.setChecked((rol_id, perm_id) in permisos_asignados if perm_id else False)
+                        # Conectar para guardar al cambiar
+                        chk.toggled.connect(lambda checked, r=rol_id, p=perm_id: self._toggle_permiso(r, p, checked))
                     tabla_p.setCellWidget(i, col, chk)
 
         return w
+
+    def _toggle_permiso(self, rol_id: int, permiso_id: int, checked: bool):
+        """Guarda/elimina permiso en BD al marcar/desmarcar checkbox."""
+        if not permiso_id:
+            return
+        from core.database import get_db
+        from models.permiso import RolPermiso
+        with get_db() as db:
+            existente = db.query(RolPermiso).filter(
+                RolPermiso.rol_id == rol_id, RolPermiso.permiso_id == permiso_id
+            ).first()
+            if checked and not existente:
+                db.add(RolPermiso(rol_id=rol_id, permiso_id=permiso_id))
+            elif not checked and existente:
+                db.delete(existente)
