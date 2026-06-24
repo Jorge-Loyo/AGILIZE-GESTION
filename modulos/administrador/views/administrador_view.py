@@ -312,45 +312,17 @@ class AdministradorView(QWidget):
         info.setStyleSheet("font-size: 11px; color: #888;")
         lay.addWidget(info)
 
-        MODULOS_APP = ["Compras", "Inventario", "Ventas", "Facturador", "RRHH", "Cuentas", "Finanzas", "Reportes", "Herramientas", "Importador", "Administrador", "Configuracion"]
-        ACCIONES = ["ver", "crear", "editar", "eliminar"]
-
-        tabla_p = QTableWidget()
-        lay.addWidget(tabla_p, 1)
-
-        def cargar_roles():
-            from core.database import get_db
-            from models.rol import Rol
-            with get_db() as db:
-                roles = db.query(Rol).filter(Rol.activo.is_(True)).order_by(Rol.id).all()
-                roles_data = [(r.id, r.nombre) for r in roles]
-            n_cols = 1 + len(roles_data) * len(ACCIONES)
-            tabla_p.setColumnCount(n_cols)
-            headers = ["Modulo"]
-            for _, nombre in roles_data:
-                for acc in ACCIONES:
-                    headers.append(f"{nombre[:6]}\n{acc}")
-            tabla_p.setHorizontalHeaderLabels(headers)
-            tabla_p.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
-            tabla_p.setRowCount(len(MODULOS_APP))
-            tabla_p.verticalHeader().setVisible(False)
-            for i, modulo in enumerate(MODULOS_APP):
-                tabla_p.setItem(i, 0, QTableWidgetItem(modulo))
-                for j, (rol_id, _) in enumerate(roles_data):
-                    for k, acc in enumerate(ACCIONES):
-                        col = 1 + j * len(ACCIONES) + k
-                        chk = QCheckBox()
-                        if rol_id == 1:
-                            chk.setChecked(True)
-                            chk.setEnabled(False)
-                        else:
-                            chk.setChecked(acc == "ver")
-                        tabla_p.setCellWidget(i, col, chk)
+        # Tabla de roles existentes
+        from PySide6.QtWidgets import QTabWidget
+        tabs = QTabWidget()
+        tabs.addTab(self._build_lista_roles(), "Roles")
+        tabs.addTab(self._build_matriz_permisos(), "Matriz de Permisos")
+        lay.addWidget(tabs)
 
         def nuevo_rol():
             dlg = QDialog(page)
             dlg.setWindowTitle("Nuevo Rol")
-            dlg.setMinimumWidth(300)
+            dlg.setMinimumWidth(350)
             d_lay = QVBoxLayout(dlg)
             form = QFormLayout()
             inp_n = QLineEdit()
@@ -368,8 +340,159 @@ class AdministradorView(QWidget):
                 from models.rol import Rol
                 with get_db() as db:
                     db.add(Rol(nombre=inp_n.text().strip(), descripcion=inp_d.text().strip(), activo=True))
-                cargar_roles()
+                self._cargar_roles_tabla()
 
         btn_nuevo.clicked.connect(nuevo_rol)
-        cargar_roles()
         return page
+
+    def _build_lista_roles(self) -> QWidget:
+        """Tab con lista de roles editables."""
+        w = QWidget()
+        lay = QVBoxLayout(w)
+        lay.setContentsMargins(8, 8, 8, 8)
+
+        self._tabla_roles = QTableWidget()
+        self._tabla_roles.setColumnCount(5)
+        self._tabla_roles.setHorizontalHeaderLabels(["ID", "Nombre", "Descripcion", "Activo", ""])
+        self._tabla_roles.horizontalHeader().setSectionResizeMode(2, QHeaderView.Stretch)
+        self._tabla_roles.horizontalHeader().setSectionResizeMode(4, QHeaderView.Fixed)
+        self._tabla_roles.setColumnWidth(4, 80)
+        self._tabla_roles.setColumnHidden(0, True)
+        self._tabla_roles.setAlternatingRowColors(True)
+        self._tabla_roles.verticalHeader().setVisible(False)
+        self._tabla_roles.setEditTriggers(QTableWidget.NoEditTriggers)
+        self._tabla_roles.setSelectionBehavior(QTableWidget.SelectRows)
+        lay.addWidget(self._tabla_roles)
+
+        btns = QHBoxLayout()
+        btn_editar = QPushButton("  Editar")
+        btn_editar.setIcon(qta.icon("fa5s.edit", color="#3b82f6"))
+        btn_editar.setFixedHeight(28)
+        btn_editar.clicked.connect(self._editar_rol)
+        btns.addWidget(btn_editar)
+        btn_toggle = QPushButton("  Activar/Desactivar")
+        btn_toggle.setFixedHeight(28)
+        btn_toggle.clicked.connect(self._toggle_rol)
+        btns.addWidget(btn_toggle)
+        btns.addStretch()
+        lay.addLayout(btns)
+
+        self._cargar_roles_tabla()
+        return w
+
+    def _cargar_roles_tabla(self):
+        from core.database import get_db
+        from models.rol import Rol
+        with get_db() as db:
+            roles = db.query(Rol).order_by(Rol.id).all()
+            self._roles_data = [(r.id, r.nombre, r.descripcion, r.activo) for r in roles]
+        self._tabla_roles.setRowCount(len(self._roles_data))
+        for i, (rid, nombre, desc, activo) in enumerate(self._roles_data):
+            self._tabla_roles.setItem(i, 0, QTableWidgetItem(str(rid)))
+            self._tabla_roles.setItem(i, 1, QTableWidgetItem(nombre))
+            self._tabla_roles.setItem(i, 2, QTableWidgetItem(desc or ""))
+            estado = QTableWidgetItem("Activo" if activo else "Inactivo")
+            if not activo:
+                estado.setForeground(__import__('PySide6.QtCore', fromlist=['Qt']).Qt.red)
+            self._tabla_roles.setItem(i, 3, estado)
+            # Proteger Administrador
+            if rid == 1:
+                self._tabla_roles.setItem(i, 4, QTableWidgetItem("(protegido)"))
+            else:
+                self._tabla_roles.setItem(i, 4, QTableWidgetItem(""))
+
+    def _editar_rol(self):
+        row = self._tabla_roles.currentRow()
+        if row < 0:
+            return
+        rid = int(self._tabla_roles.item(row, 0).text())
+        if rid == 1:
+            QMessageBox.warning(None, "Aviso", "El rol Administrador no se puede editar.")
+            return
+        nombre_actual = self._tabla_roles.item(row, 1).text()
+        desc_actual = self._tabla_roles.item(row, 2).text()
+
+        dlg = QDialog()
+        dlg.setWindowTitle("Editar Rol")
+        dlg.setMinimumWidth(350)
+        d_lay = QVBoxLayout(dlg)
+        form = QFormLayout()
+        inp_n = QLineEdit(nombre_actual)
+        inp_n.setMaxLength(50)
+        form.addRow("Nombre:", inp_n)
+        inp_d = QLineEdit(desc_actual)
+        inp_d.setMaxLength(200)
+        form.addRow("Descripcion:", inp_d)
+        d_lay.addLayout(form)
+        btn_ok = QPushButton("Guardar")
+        btn_ok.clicked.connect(dlg.accept)
+        d_lay.addWidget(btn_ok)
+        if dlg.exec() == QDialog.Accepted and inp_n.text().strip():
+            from core.database import get_db
+            from models.rol import Rol
+            with get_db() as db:
+                rol = db.get(Rol, rid)
+                if rol:
+                    rol.nombre = inp_n.text().strip()
+                    rol.descripcion = inp_d.text().strip()
+            self._cargar_roles_tabla()
+
+    def _toggle_rol(self):
+        row = self._tabla_roles.currentRow()
+        if row < 0:
+            return
+        rid = int(self._tabla_roles.item(row, 0).text())
+        if rid == 1:
+            QMessageBox.warning(None, "Aviso", "El rol Administrador no se puede desactivar.")
+            return
+        from core.database import get_db
+        from models.rol import Rol
+        with get_db() as db:
+            rol = db.get(Rol, rid)
+            if rol:
+                rol.activo = not rol.activo
+        self._cargar_roles_tabla()
+
+    def _build_matriz_permisos(self) -> QWidget:
+        """Tab con matriz visual de permisos."""
+        w = QWidget()
+        lay = QVBoxLayout(w)
+        lay.setContentsMargins(8, 8, 8, 8)
+
+        MODULOS_APP = ["Compras", "Inventario", "Ventas", "Facturador", "RRHH", "Cuentas", "Finanzas", "Reportes", "Herramientas", "Importador", "Administrador", "Configuracion"]
+        ACCIONES = ["ver", "crear", "editar", "eliminar"]
+
+        tabla_p = QTableWidget()
+        lay.addWidget(tabla_p, 1)
+
+        from core.database import get_db
+        from models.rol import Rol
+        with get_db() as db:
+            roles = db.query(Rol).filter(Rol.activo.is_(True)).order_by(Rol.id).all()
+            roles_data = [(r.id, r.nombre) for r in roles]
+
+        n_cols = 1 + len(roles_data) * len(ACCIONES)
+        tabla_p.setColumnCount(n_cols)
+        headers = ["Modulo"]
+        for _, nombre in roles_data:
+            for acc in ACCIONES:
+                headers.append(f"{nombre[:6]}\n{acc}")
+        tabla_p.setHorizontalHeaderLabels(headers)
+        tabla_p.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        tabla_p.setRowCount(len(MODULOS_APP))
+        tabla_p.verticalHeader().setVisible(False)
+
+        for i, modulo in enumerate(MODULOS_APP):
+            tabla_p.setItem(i, 0, QTableWidgetItem(modulo))
+            for j, (rol_id, _) in enumerate(roles_data):
+                for k, acc in enumerate(ACCIONES):
+                    col = 1 + j * len(ACCIONES) + k
+                    chk = QCheckBox()
+                    if rol_id == 1:
+                        chk.setChecked(True)
+                        chk.setEnabled(False)
+                    else:
+                        chk.setChecked(acc == "ver")
+                    tabla_p.setCellWidget(i, col, chk)
+
+        return w
