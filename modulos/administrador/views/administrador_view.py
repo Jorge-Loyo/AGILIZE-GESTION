@@ -598,3 +598,198 @@ class AdministradorView(QWidget):
                 db.add(RolPermiso(rol_id=rol_id, permiso_id=permiso_id))
             elif not checked and existente:
                 db.delete(existente)
+
+    def _build_matriz_permisos(self) -> QWidget:
+        """Tab con matriz jerarquica: modulos colapsables con submodulos."""
+        from PySide6.QtWidgets import QTreeWidget, QTreeWidgetItem, QComboBox as QCB
+
+        w = QWidget()
+        lay = QVBoxLayout(w)
+        lay.setContentsMargins(12, 12, 12, 12)
+        lay.setSpacing(10)
+
+        # Selector de rol
+        row_sel = QHBoxLayout()
+        row_sel.addWidget(QLabel("Rol:"))
+        self._combo_rol_permisos = QCB()
+        self._combo_rol_permisos.setFixedHeight(30)
+        self._combo_rol_permisos.setMinimumWidth(200)
+        row_sel.addWidget(self._combo_rol_permisos)
+        row_sel.addStretch()
+        self._lbl_rol_info = QLabel("")
+        self._lbl_rol_info.setStyleSheet("font-size: 11px; color: #888;")
+        row_sel.addWidget(self._lbl_rol_info)
+        lay.addLayout(row_sel)
+
+        info = QLabel("Expande cada modulo para configurar permisos granulares por submodulo. Cambios automaticos.")
+        info.setStyleSheet("font-size: 11px; color: #666;")
+        lay.addWidget(info)
+
+        # Tree widget
+        self._tree_permisos = QTreeWidget()
+        self._tree_permisos.setHeaderLabels(["Modulo / Submodulo", "Ver", "Crear", "Editar", "Eliminar"])
+        self._tree_permisos.setColumnWidth(0, 260)
+        for col in range(1, 5):
+            self._tree_permisos.setColumnWidth(col, 70)
+        self._tree_permisos.setAlternatingRowColors(True)
+        self._tree_permisos.setRootIsDecorated(True)
+        lay.addWidget(self._tree_permisos, 1)
+
+        # Arbol de modulos con submodulos
+        self._ARBOL_MODULOS = [
+            ("compras", "Compras", ["proveedores", "requisiciones", "req_sugerido", "ordenes_compra", "recepcion", "facturas_compra", "precios", "cotizaciones", "aprobaciones", "trazabilidad", "reportes_kpi"]),
+            ("inventario", "Inventario", ["productos", "depositos", "movimientos", "lotes", "series", "toma_stock", "valorizacion", "alertas"]),
+            ("ventas", "Ventas", ["clientes", "presupuestos", "pedidos", "remitos", "facturas_venta", "notas_cred_deb", "riesgo", "reportes_venta"]),
+            ("facturador", "Facturador", ["pos", "facturacion_central", "cajas_turnos", "historial"]),
+            ("empleados", "RRHH", ["empleados_crud", "legajo", "asistencia", "fichaje_turnos", "cierres", "nomina", "reclutamiento", "config_rrhh"]),
+            ("cuentas", "Cuentas", ["cta_corriente"]),
+            ("finanzas", "Finanzas", ["contabilidad", "facturacion", "bancos", "caja"]),
+            ("reportes", "Reportes", ["dashboard_bi"]),
+            ("herramientas", "Herramientas", ["etiquetas", "limpiador", "cotizacion_tc", "exportar"]),
+            ("importador", "Importador", ["importar_productos", "actualizar_precios"]),
+            ("administrador", "Administrador", ["usuarios", "roles_permisos", "tablas_maestras"]),
+            ("admin", "Configuracion", ["datos_empresa", "visual", "auditoria", "actualizar", "desarrollador"]),
+        ]
+        self._ACCIONES = ["ver", "crear", "editar", "eliminar"]
+
+        self._asegurar_permisos_arbol()
+        self._cargar_combo_roles_arbol()
+        self._combo_rol_permisos.currentIndexChanged.connect(self._cargar_arbol_rol)
+        if self._combo_rol_permisos.count() > 0:
+            self._cargar_arbol_rol()
+
+        return w
+
+    def _asegurar_permisos_arbol(self):
+        """Crea modulos, submodulos y permisos en BD si no existen."""
+        from core.database import get_db
+        from models.permiso import Permiso, Modulo
+        self._perm_map = {}
+        with get_db() as db:
+            for mod_codigo, mod_nombre, submodulos in self._ARBOL_MODULOS:
+                modulo = db.query(Modulo).filter(Modulo.codigo == mod_codigo).first()
+                if not modulo:
+                    modulo = Modulo(codigo=mod_codigo, nombre=mod_nombre, activo=True)
+                    db.add(modulo)
+                    db.flush()
+                for accion in self._ACCIONES:
+                    perm = db.query(Permiso).filter(Permiso.modulo_id == modulo.id, Permiso.accion == accion).first()
+                    if not perm:
+                        perm = Permiso(modulo_id=modulo.id, accion=accion)
+                        db.add(perm)
+                        db.flush()
+                    self._perm_map[(mod_codigo, accion)] = perm.id
+                for sub in submodulos:
+                    sub_code = f"{mod_codigo}.{sub}"
+                    sub_mod = db.query(Modulo).filter(Modulo.codigo == sub_code).first()
+                    if not sub_mod:
+                        sub_mod = Modulo(codigo=sub_code, nombre=sub, activo=True)
+                        db.add(sub_mod)
+                        db.flush()
+                    for accion in self._ACCIONES:
+                        perm = db.query(Permiso).filter(Permiso.modulo_id == sub_mod.id, Permiso.accion == accion).first()
+                        if not perm:
+                            perm = Permiso(modulo_id=sub_mod.id, accion=accion)
+                            db.add(perm)
+                            db.flush()
+                        self._perm_map[(sub_code, accion)] = perm.id
+
+    def _cargar_combo_roles_arbol(self):
+        from core.database import get_db
+        from models.rol import Rol
+        self._combo_rol_permisos.clear()
+        with get_db() as db:
+            roles = db.query(Rol).filter(Rol.activo.is_(True)).order_by(Rol.id).all()
+            for r in roles:
+                self._combo_rol_permisos.addItem(r.nombre, r.id)
+
+    def _cargar_arbol_rol(self):
+        """Reconstruye tree con checkboxes segun permisos del rol."""
+        from PySide6.QtWidgets import QTreeWidgetItem
+        rol_id = self._combo_rol_permisos.currentData()
+        if not rol_id:
+            return
+        es_admin = (rol_id == 1)
+        self._lbl_rol_info.setText("(Administrador: acceso total)" if es_admin else "")
+
+        from core.database import get_db
+        from models.permiso import RolPermiso
+        with get_db() as db:
+            asignados = set(rp.permiso_id for rp in db.query(RolPermiso).filter(RolPermiso.rol_id == rol_id).all())
+
+        self._tree_permisos.clear()
+
+        for mod_codigo, mod_nombre, submodulos in self._ARBOL_MODULOS:
+            parent = QTreeWidgetItem([mod_nombre])
+            parent.setExpanded(False)
+            self._tree_permisos.addTopLevelItem(parent)
+
+            # Checkboxes padre
+            parent_chks = []
+            child_chks_by_accion = {a: [] for a in self._ACCIONES}
+
+            for k, accion in enumerate(self._ACCIONES):
+                col = k + 1
+                perm_id = self._perm_map.get((mod_codigo, accion))
+                chk = QCheckBox()
+                if es_admin:
+                    chk.setChecked(True)
+                    chk.setEnabled(False)
+                else:
+                    chk.setChecked(perm_id in asignados if perm_id else False)
+                self._tree_permisos.setItemWidget(parent, col, chk)
+                parent_chks.append((chk, perm_id))
+
+            # Hijos
+            for sub in submodulos:
+                sub_code = f"{mod_codigo}.{sub}"
+                sub_label = sub.replace("_", " ").capitalize()
+                child = QTreeWidgetItem([f"  {sub_label}"])
+                parent.addChild(child)
+
+                for k, accion in enumerate(self._ACCIONES):
+                    col = k + 1
+                    perm_id = self._perm_map.get((sub_code, accion))
+                    chk = QCheckBox()
+                    if es_admin:
+                        chk.setChecked(True)
+                        chk.setEnabled(False)
+                    else:
+                        chk.setChecked(perm_id in asignados if perm_id else False)
+                        if perm_id:
+                            chk.toggled.connect(lambda checked, r=rol_id, p=perm_id: self._toggle_permiso(r, p, checked))
+                    self._tree_permisos.setItemWidget(child, col, chk)
+                    child_chks_by_accion[accion].append((chk, perm_id))
+
+            # Cascada padre -> hijos
+            if not es_admin:
+                for k, accion in enumerate(self._ACCIONES):
+                    p_chk, p_perm = parent_chks[k]
+                    hijos = child_chks_by_accion[accion]
+                    p_chk.toggled.connect(self._make_cascade(rol_id, p_perm, hijos))
+
+    def _make_cascade(self, rol_id, parent_perm_id, hijos):
+        """Handler cascada: marcar padre marca todos los hijos."""
+        def handler(checked):
+            self._toggle_permiso(rol_id, parent_perm_id, checked)
+            for chk, perm_id in hijos:
+                chk.blockSignals(True)
+                chk.setChecked(checked)
+                chk.blockSignals(False)
+                self._toggle_permiso(rol_id, perm_id, checked)
+        return handler
+
+    def _toggle_permiso(self, rol_id: int, permiso_id: int, checked: bool):
+        """Guarda/elimina permiso en BD."""
+        if not permiso_id:
+            return
+        from core.database import get_db
+        from models.permiso import RolPermiso
+        with get_db() as db:
+            existente = db.query(RolPermiso).filter(
+                RolPermiso.rol_id == rol_id, RolPermiso.permiso_id == permiso_id
+            ).first()
+            if checked and not existente:
+                db.add(RolPermiso(rol_id=rol_id, permiso_id=permiso_id))
+            elif not checked and existente:
+                db.delete(existente)
