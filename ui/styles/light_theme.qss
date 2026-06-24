@@ -301,3 +301,26 @@ QLabel#success {
 QLabel#warning {
     color: #f59e0b;
 }
+
+
+/* Sub-sidebar Administrador */
+#sub_sidebar {
+    background-color: #f0f0f0;
+    border-right: 1px solid #ddd;
+}
+#sub_sidebar_btn {
+    text-align: left;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    color: #444;
+    background-color: transparent;
+}
+#sub_sidebar_btn:hover {
+    background-color: #e0e0e0;
+    color: #222;
+}
+#sub_sidebar_btn:checked {
+    background-color: #d5d5d5;
+    color: #8B7500;
+}

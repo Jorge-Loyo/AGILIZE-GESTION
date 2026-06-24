@@ -131,8 +131,8 @@ class AdministradorView(QWidget):
 
         # === SUB-SIDEBAR (opciones del grupo) ===
         self._sub_sidebar = QFrame()
+        self._sub_sidebar.setObjectName("sub_sidebar")
         self._sub_sidebar.setFixedWidth(160)
-        self._sub_sidebar.setStyleSheet("QFrame { background-color: #141414; border-right: 1px solid #2a2a2a; }")
         self._sub_layout = QVBoxLayout(self._sub_sidebar)
         self._sub_layout.setContentsMargins(8, 16, 8, 16)
         self._sub_layout.setSpacing(3)
@@ -172,7 +172,7 @@ class AdministradorView(QWidget):
         # Titulo del grupo
         grupo = GRUPOS_ADMIN[idx]
         lbl = QLabel(grupo["grupo"])
-        lbl.setStyleSheet("font-size: 11px; font-weight: bold; color: #D4AF37; padding: 4px 6px; background: transparent;")
+        lbl.setStyleSheet("font-size: 11px; font-weight: bold; color: #D4AF37; padding: 4px 6px;")
         self._sub_layout.addWidget(lbl)
 
         # Botones de items
@@ -182,11 +182,7 @@ class AdministradorView(QWidget):
             btn.setCursor(Qt.PointingHandCursor)
             btn.setCheckable(True)
             btn.setFixedHeight(28)
-            btn.setStyleSheet("""
-                QPushButton { text-align: left; padding: 4px 8px; border-radius: 3px; font-size: 11px; color: #999; background-color: transparent; }
-                QPushButton:hover { background-color: #222; color: #ddd; }
-                QPushButton:checked { background-color: #252525; color: #D4AF37; }
-            """)
+            btn.setObjectName("sub_sidebar_btn")
             btn.clicked.connect(lambda checked, c=item["codigo"]: self._open_item(c))
             self._sub_layout.addWidget(btn)
             self._item_buttons.append(btn)
