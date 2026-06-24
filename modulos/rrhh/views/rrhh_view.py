@@ -10,9 +10,12 @@ from ui.theme_manager import theme_manager
 SUBMODULOS_RRHH = [
     {"codigo": "dashboard", "label": "Dashboard", "icon": "fa5s.chart-bar"},
     {"codigo": "empleados", "label": "Empleados", "icon": "fa5s.users"},
+    {"codigo": "legajo", "label": "Legajo", "icon": "fa5s.folder-open"},
     {"codigo": "asistencia", "label": "Asistencia", "icon": "fa5s.clock"},
+    {"codigo": "fichaje", "label": "Fichaje / Turnos", "icon": "fa5s.fingerprint"},
     {"codigo": "cierres", "label": "Cierres", "icon": "fa5s.lock"},
     {"codigo": "nomina", "label": "Nomina", "icon": "fa5s.money-bill-wave"},
+    {"codigo": "reclutamiento", "label": "Reclutamiento", "icon": "fa5s.user-plus"},
     {"codigo": "config", "label": "Configuracion", "icon": "fa5s.cog"},
 ]
 
@@ -123,6 +126,15 @@ class RRHHView(QWidget):
         if codigo == "config":
             from modulos.rrhh.views.config_rrhh_view import ConfigRRHHView
             return ConfigRRHHView()
+        if codigo == "legajo":
+            from modulos.rrhh.views.legajo_view import LegajoView
+            return LegajoView()
+        if codigo == "fichaje":
+            from modulos.rrhh.views.fichaje_view import FichajeView
+            return FichajeView()
+        if codigo == "reclutamiento":
+            from modulos.rrhh.views.reclutamiento_view import ReclutamientoView
+            return ReclutamientoView()
 
         page = QWidget()
         lay = QVBoxLayout(page)
