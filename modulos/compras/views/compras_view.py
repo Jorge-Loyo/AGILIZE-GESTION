@@ -7,16 +7,16 @@ import qtawesome as qta
 from ui.theme_manager import theme_manager
 
 
-SUBMODULOS_HERRAMIENTAS = [
-    {"codigo": "limpiador", "label": "Limpiador Productos", "icon": "fa5s.file-excel"},
-    {"codigo": "cotizaciones", "label": "Cotizaciones", "icon": "fa5s.dollar-sign"},
-    {"codigo": "etiquetas_estante", "label": "Etiquetas Estante", "icon": "fa5s.tag"},
-    {"codigo": "etiquetas_producto", "label": "Etiquetas Producto", "icon": "fa5s.barcode"},
-    {"codigo": "config_herramientas", "label": "Configuracion", "icon": "fa5s.cog"},
+SUBMODULOS_COMPRAS = [
+    {"codigo": "proveedores", "label": "Proveedores", "icon": "fa5s.truck"},
+    {"codigo": "ordenes_compra", "label": "Ordenes de Compra", "icon": "fa5s.clipboard-list"},
+    {"codigo": "orden_sugerida", "label": "Orden Sugerida", "icon": "fa5s.magic"},
+    {"codigo": "recepcion", "label": "Recepcion", "icon": "fa5s.dolly"},
+    {"codigo": "historial_compras", "label": "Historial", "icon": "fa5s.history"},
 ]
 
 
-class HerramientasView(QWidget):
+class ComprasView(QWidget):
     volver_dashboard = Signal()
     logout_signal = Signal()
 
@@ -30,7 +30,6 @@ class HerramientasView(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
-        # Sidebar
         sidebar = QFrame()
         sidebar.setObjectName("sidebar")
         sidebar.setFixedWidth(200)
@@ -41,26 +40,19 @@ class HerramientasView(QWidget):
         btn_volver = QPushButton("  Menu")
         btn_volver.setIcon(qta.icon("fa5s.arrow-left", color="#8a8a8a"))
         btn_volver.setCursor(Qt.PointingHandCursor)
-        btn_volver.setStyleSheet(
-            "QPushButton { background-color: transparent; color: #8a8a8a; "
-            "border: none; text-align: left; padding: 8px 12px; } "
-            "QPushButton:hover { color: #F8F9FA; }"
-        )
+        btn_volver.setStyleSheet("QPushButton { background-color: transparent; color: #8a8a8a; border: none; text-align: left; padding: 8px 12px; } QPushButton:hover { color: #F8F9FA; }")
         btn_volver.clicked.connect(self.volver_dashboard.emit)
         sidebar_layout.addWidget(btn_volver)
 
         sidebar_layout.addSpacerItem(QSpacerItem(0, 8, QSizePolicy.Minimum, QSizePolicy.Fixed))
-
-        lbl = QLabel("Herramientas")
+        lbl = QLabel("Compras")
         lbl.setStyleSheet("font-size: 14px; font-weight: bold; color: #D4AF37;")
         lbl.setAlignment(Qt.AlignCenter)
         sidebar_layout.addWidget(lbl)
-
         sidebar_layout.addSpacerItem(QSpacerItem(0, 12, QSizePolicy.Minimum, QSizePolicy.Fixed))
 
         self.stack = QStackedWidget()
-
-        for i, sub in enumerate(SUBMODULOS_HERRAMIENTAS):
+        for i, sub in enumerate(SUBMODULOS_COMPRAS):
             btn = QPushButton(f"  {sub['label']}")
             btn.setIcon(qta.icon(sub["icon"], color="#8a8a8a"))
             btn.setCursor(Qt.PointingHandCursor)
@@ -68,59 +60,41 @@ class HerramientasView(QWidget):
             btn.clicked.connect(lambda checked, idx=i: self._navigate(idx))
             sidebar_layout.addWidget(btn)
             self._buttons.append(btn)
-
-            page = self._create_submodule(sub["codigo"])
-            self.stack.addWidget(page)
+            self.stack.addWidget(self._create_submodule(sub["codigo"]))
 
         sidebar_layout.addStretch()
-
         btn_theme = QPushButton("  Cambiar modo")
         btn_theme.setIcon(qta.icon("fa5s.adjust", color="#8a8a8a"))
         btn_theme.setCursor(Qt.PointingHandCursor)
-        btn_theme.clicked.connect(self._toggle_theme)
+        btn_theme.clicked.connect(lambda: theme_manager.toggle(__import__('PySide6.QtWidgets', fromlist=['QApplication']).QApplication.instance()))
         sidebar_layout.addWidget(btn_theme)
-
         sidebar_layout.addSpacerItem(QSpacerItem(0, 4, QSizePolicy.Minimum, QSizePolicy.Fixed))
-
         btn_logout = QPushButton("  Cerrar sesion")
         btn_logout.setIcon(qta.icon("fa5s.sign-out-alt", color="#ffffff"))
         btn_logout.setCursor(Qt.PointingHandCursor)
-        btn_logout.setStyleSheet(
-            "QPushButton { background-color: #ef4444; } "
-            "QPushButton:hover { background-color: #dc2626; }"
-        )
+        btn_logout.setStyleSheet("QPushButton { background-color: #ef4444; } QPushButton:hover { background-color: #dc2626; }")
         btn_logout.clicked.connect(self.logout_signal.emit)
         sidebar_layout.addWidget(btn_logout)
 
         layout.addWidget(sidebar)
         layout.addWidget(self.stack)
-
         if self._buttons:
             self._navigate(0)
 
     def _create_submodule(self, codigo: str) -> QWidget:
-        if codigo == "limpiador":
-            from modulos.herramientas.views.limpiador_view import LimpiadorView
-            return LimpiadorView()
-        if codigo == "cotizaciones":
-            from modulos.herramientas.views.cotizaciones_view import CotizacionesView
-            return CotizacionesView()
-        if codigo == "etiquetas_estante":
-            from modulos.herramientas.views.etiquetas_estante_view import EtiquetasEstanteView
-            return EtiquetasEstanteView()
-        if codigo == "etiquetas_producto":
-            from modulos.herramientas.views.etiquetas_producto_view import EtiquetasProductoView
-            return EtiquetasProductoView()
-        if codigo == "config_herramientas":
-            from modulos.herramientas.views.config_herramientas_view import ConfigHerramientasView
-            return ConfigHerramientasView()
-
+        if codigo == "proveedores":
+            from modulos.datos.views.proveedores_view import ProveedoresView
+            return ProveedoresView()
+        if codigo == "ordenes_compra":
+            from modulos.compras.views.ordenes_compra_view import OrdenesCompraView
+            return OrdenesCompraView()
+        if codigo == "orden_sugerida":
+            from modulos.compras.views.orden_sugerida_view import OrdenSugeridaView
+            return OrdenSugeridaView()
         page = QWidget()
         lay = QVBoxLayout(page)
         lay.setContentsMargins(32, 32, 32, 32)
-        lbl = QLabel("En desarrollo")
-        lbl.setObjectName("subtitle")
-        lay.addWidget(lbl)
+        lay.addWidget(QLabel(f"{codigo.replace('_', ' ').capitalize()} - En desarrollo"))
         lay.addStretch()
         return page
 
@@ -131,7 +105,3 @@ class HerramientasView(QWidget):
             btn.setProperty("active", i == index)
             btn.style().unpolish(btn)
             btn.style().polish(btn)
-
-    def _toggle_theme(self):
-        from PySide6.QtWidgets import QApplication
-        theme_manager.toggle(QApplication.instance())

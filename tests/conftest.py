@@ -16,3 +16,9 @@ import models.permiso_empleado  # noqa
 import models.config_nomina  # noqa
 import models.audit_log  # noqa
 import models.permiso  # noqa
+import models.inventario  # noqa
+import models.datos  # noqa
+import models.cuentas  # noqa
+import models.finanzas  # noqa
+import models.comercial  # noqa
+import models.facturador  # noqa

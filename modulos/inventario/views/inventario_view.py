@@ -7,16 +7,15 @@ import qtawesome as qta
 from ui.theme_manager import theme_manager
 
 
-SUBMODULOS_HERRAMIENTAS = [
-    {"codigo": "limpiador", "label": "Limpiador Productos", "icon": "fa5s.file-excel"},
-    {"codigo": "cotizaciones", "label": "Cotizaciones", "icon": "fa5s.dollar-sign"},
-    {"codigo": "etiquetas_estante", "label": "Etiquetas Estante", "icon": "fa5s.tag"},
-    {"codigo": "etiquetas_producto", "label": "Etiquetas Producto", "icon": "fa5s.barcode"},
-    {"codigo": "config_herramientas", "label": "Configuracion", "icon": "fa5s.cog"},
+SUBMODULOS_INVENTARIO = [
+    {"codigo": "dashboard_inv", "label": "Dashboard", "icon": "fa5s.chart-bar"},
+    {"codigo": "productos", "label": "Productos", "icon": "fa5s.box"},
+    {"codigo": "depositos", "label": "Depositos", "icon": "fa5s.warehouse"},
+    {"codigo": "movimientos", "label": "Movimientos", "icon": "fa5s.exchange-alt"},
 ]
 
 
-class HerramientasView(QWidget):
+class InventarioView(QWidget):
     volver_dashboard = Signal()
     logout_signal = Signal()
 
@@ -30,7 +29,6 @@ class HerramientasView(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
-        # Sidebar
         sidebar = QFrame()
         sidebar.setObjectName("sidebar")
         sidebar.setFixedWidth(200)
@@ -51,7 +49,7 @@ class HerramientasView(QWidget):
 
         sidebar_layout.addSpacerItem(QSpacerItem(0, 8, QSizePolicy.Minimum, QSizePolicy.Fixed))
 
-        lbl = QLabel("Herramientas")
+        lbl = QLabel("Inventario")
         lbl.setStyleSheet("font-size: 14px; font-weight: bold; color: #D4AF37;")
         lbl.setAlignment(Qt.AlignCenter)
         sidebar_layout.addWidget(lbl)
@@ -60,7 +58,7 @@ class HerramientasView(QWidget):
 
         self.stack = QStackedWidget()
 
-        for i, sub in enumerate(SUBMODULOS_HERRAMIENTAS):
+        for i, sub in enumerate(SUBMODULOS_INVENTARIO):
             btn = QPushButton(f"  {sub['label']}")
             btn.setIcon(qta.icon(sub["icon"], color="#8a8a8a"))
             btn.setCursor(Qt.PointingHandCursor)
@@ -99,28 +97,22 @@ class HerramientasView(QWidget):
             self._navigate(0)
 
     def _create_submodule(self, codigo: str) -> QWidget:
-        if codigo == "limpiador":
-            from modulos.herramientas.views.limpiador_view import LimpiadorView
-            return LimpiadorView()
-        if codigo == "cotizaciones":
-            from modulos.herramientas.views.cotizaciones_view import CotizacionesView
-            return CotizacionesView()
-        if codigo == "etiquetas_estante":
-            from modulos.herramientas.views.etiquetas_estante_view import EtiquetasEstanteView
-            return EtiquetasEstanteView()
-        if codigo == "etiquetas_producto":
-            from modulos.herramientas.views.etiquetas_producto_view import EtiquetasProductoView
-            return EtiquetasProductoView()
-        if codigo == "config_herramientas":
-            from modulos.herramientas.views.config_herramientas_view import ConfigHerramientasView
-            return ConfigHerramientasView()
+        if codigo == "dashboard_inv":
+            from modulos.inventario.views.dashboard_inv_view import DashboardInventarioView
+            return DashboardInventarioView()
+        if codigo == "productos":
+            from modulos.inventario.views.productos_view import ProductosView
+            return ProductosView()
+        if codigo == "depositos":
+            from modulos.inventario.views.depositos_view import DepositosView
+            return DepositosView()
+        if codigo == "movimientos":
+            from modulos.inventario.views.movimientos_view import MovimientosView
+            return MovimientosView()
 
         page = QWidget()
         lay = QVBoxLayout(page)
-        lay.setContentsMargins(32, 32, 32, 32)
-        lbl = QLabel("En desarrollo")
-        lbl.setObjectName("subtitle")
-        lay.addWidget(lbl)
+        lay.addWidget(QLabel("En desarrollo"))
         lay.addStretch()
         return page
 

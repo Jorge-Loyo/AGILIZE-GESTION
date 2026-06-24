@@ -7,16 +7,13 @@ import qtawesome as qta
 from ui.theme_manager import theme_manager
 
 
-SUBMODULOS_HERRAMIENTAS = [
-    {"codigo": "limpiador", "label": "Limpiador Productos", "icon": "fa5s.file-excel"},
-    {"codigo": "cotizaciones", "label": "Cotizaciones", "icon": "fa5s.dollar-sign"},
-    {"codigo": "etiquetas_estante", "label": "Etiquetas Estante", "icon": "fa5s.tag"},
-    {"codigo": "etiquetas_producto", "label": "Etiquetas Producto", "icon": "fa5s.barcode"},
-    {"codigo": "config_herramientas", "label": "Configuracion", "icon": "fa5s.cog"},
+SUBMODULOS_DATOS = [
+    {"codigo": "proveedores", "label": "Proveedores", "icon": "fa5s.truck"},
+    {"codigo": "clientes", "label": "Clientes", "icon": "fa5s.user-tie"},
 ]
 
 
-class HerramientasView(QWidget):
+class DatosView(QWidget):
     volver_dashboard = Signal()
     logout_signal = Signal()
 
@@ -30,7 +27,6 @@ class HerramientasView(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
-        # Sidebar
         sidebar = QFrame()
         sidebar.setObjectName("sidebar")
         sidebar.setFixedWidth(200)
@@ -51,7 +47,7 @@ class HerramientasView(QWidget):
 
         sidebar_layout.addSpacerItem(QSpacerItem(0, 8, QSizePolicy.Minimum, QSizePolicy.Fixed))
 
-        lbl = QLabel("Herramientas")
+        lbl = QLabel("Datos")
         lbl.setStyleSheet("font-size: 14px; font-weight: bold; color: #D4AF37;")
         lbl.setAlignment(Qt.AlignCenter)
         sidebar_layout.addWidget(lbl)
@@ -60,7 +56,7 @@ class HerramientasView(QWidget):
 
         self.stack = QStackedWidget()
 
-        for i, sub in enumerate(SUBMODULOS_HERRAMIENTAS):
+        for i, sub in enumerate(SUBMODULOS_DATOS):
             btn = QPushButton(f"  {sub['label']}")
             btn.setIcon(qta.icon(sub["icon"], color="#8a8a8a"))
             btn.setCursor(Qt.PointingHandCursor)
@@ -85,10 +81,7 @@ class HerramientasView(QWidget):
         btn_logout = QPushButton("  Cerrar sesion")
         btn_logout.setIcon(qta.icon("fa5s.sign-out-alt", color="#ffffff"))
         btn_logout.setCursor(Qt.PointingHandCursor)
-        btn_logout.setStyleSheet(
-            "QPushButton { background-color: #ef4444; } "
-            "QPushButton:hover { background-color: #dc2626; }"
-        )
+        btn_logout.setStyleSheet("QPushButton { background-color: #ef4444; } QPushButton:hover { background-color: #dc2626; }")
         btn_logout.clicked.connect(self.logout_signal.emit)
         sidebar_layout.addWidget(btn_logout)
 
@@ -99,28 +92,15 @@ class HerramientasView(QWidget):
             self._navigate(0)
 
     def _create_submodule(self, codigo: str) -> QWidget:
-        if codigo == "limpiador":
-            from modulos.herramientas.views.limpiador_view import LimpiadorView
-            return LimpiadorView()
-        if codigo == "cotizaciones":
-            from modulos.herramientas.views.cotizaciones_view import CotizacionesView
-            return CotizacionesView()
-        if codigo == "etiquetas_estante":
-            from modulos.herramientas.views.etiquetas_estante_view import EtiquetasEstanteView
-            return EtiquetasEstanteView()
-        if codigo == "etiquetas_producto":
-            from modulos.herramientas.views.etiquetas_producto_view import EtiquetasProductoView
-            return EtiquetasProductoView()
-        if codigo == "config_herramientas":
-            from modulos.herramientas.views.config_herramientas_view import ConfigHerramientasView
-            return ConfigHerramientasView()
-
+        if codigo == "proveedores":
+            from modulos.datos.views.proveedores_view import ProveedoresView
+            return ProveedoresView()
+        if codigo == "clientes":
+            from modulos.datos.views.clientes_view import ClientesView
+            return ClientesView()
         page = QWidget()
         lay = QVBoxLayout(page)
-        lay.setContentsMargins(32, 32, 32, 32)
-        lbl = QLabel("En desarrollo")
-        lbl.setObjectName("subtitle")
-        lay.addWidget(lbl)
+        lay.addWidget(QLabel("En desarrollo"))
         lay.addStretch()
         return page
 

@@ -185,7 +185,7 @@ def main():
                 from models import nomina, asistencia, adelanto, sac, cierre  # noqa
                 from models import config_nomina, permiso_empleado, empresa  # noqa
                 from models import sucursal, historico_sueldo, vacaciones  # noqa
-                from models import aprobacion_extras  # noqa
+                from models import aprobacion_extras, inventario  # noqa
                 Base.metadata.create_all(engine)
                 logger.info("Tablas creadas. Ejecutando seed...")
                 _run_seed()

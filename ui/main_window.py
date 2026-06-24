@@ -11,9 +11,17 @@ from ui.busqueda_global import BusquedaGlobalWidget
 
 
 MODULOS_CONFIG = {
-    "empleados": {"label": "RRHH", "icon": "fa5s.users"},
-    "herramientas": {"label": "Herramientas", "icon": "fa5s.toolbox"},
-    "admin": {"label": "Configuracion", "icon": "fa5s.cog"},
+    "empleados": {"label": "RRHH", "icon": "fa5s.user-friends"},
+    "ventas": {"label": "Ventas", "icon": "fa5s.cash-register"},
+    "compras": {"label": "Compras", "icon": "fa5s.truck-loading"},
+    "facturador": {"label": "Facturador", "icon": "fa5s.barcode"},
+    "inventario": {"label": "Inventario", "icon": "fa5s.warehouse"},
+    "cuentas": {"label": "Cuentas", "icon": "fa5s.file-invoice-dollar"},
+    "finanzas": {"label": "Finanzas", "icon": "fa5s.chart-pie"},
+    "reportes": {"label": "Reportes", "icon": "fa5s.tachometer-alt"},
+    "herramientas": {"label": "Herramientas", "icon": "fa5s.tools"},
+    "conexiones": {"label": "Conexiones", "icon": "fa5s.plug"},
+    "admin": {"label": "Configuracion", "icon": "fa5s.sliders-h"},
 }
 
 
@@ -47,15 +55,18 @@ class MainWindow(QMainWindow):
 
         # Página 0: Dashboard
         modulos_accesibles = auth_service.modulos_accesibles()
-        # Herramientas siempre disponible para cualquier usuario con acceso
-        if "herramientas" not in modulos_accesibles:
-            modulos_accesibles.append("herramientas")
+        # Todos los modulos disponibles
+        for mod in ["ventas", "compras", "facturador", "inventario", "cuentas", "finanzas", "reportes", "herramientas", "conexiones"]:
+            if mod not in modulos_accesibles:
+                modulos_accesibles.append(mod)
+
+        # Forzar orden
+        orden = ["empleados", "ventas", "compras", "facturador", "inventario", "cuentas", "finanzas", "reportes", "herramientas", "conexiones", "admin"]
         modulos_data = []
-        for codigo in modulos_accesibles:
-            if codigo not in MODULOS_CONFIG:
-                continue
-            config = MODULOS_CONFIG[codigo]
-            modulos_data.append({"codigo": codigo, "label": config["label"], "icon": config["icon"]})
+        for codigo in orden:
+            if codigo in modulos_accesibles and codigo in MODULOS_CONFIG:
+                config = MODULOS_CONFIG[codigo]
+                modulos_data.append({"codigo": codigo, "label": config["label"], "icon": config["icon"]})
 
         self._dashboard = DashboardView(modulos_data)
         self._dashboard.modulo_selected.connect(self._abrir_modulo)
@@ -80,9 +91,63 @@ class MainWindow(QMainWindow):
             view.volver_dashboard.connect(lambda: self.stack.setCurrentIndex(0))
             view.logout_signal.connect(self._logout)
             return view
+        if codigo == "ventas":
+            from modulos.ventas.views.ventas_view import VentasView
+            view = VentasView()
+            view.volver_dashboard.connect(lambda: self.stack.setCurrentIndex(0))
+            view.logout_signal.connect(self._logout)
+            return view
+        if codigo == "compras":
+            from modulos.compras.views.compras_view import ComprasView
+            view = ComprasView()
+            view.volver_dashboard.connect(lambda: self.stack.setCurrentIndex(0))
+            view.logout_signal.connect(self._logout)
+            return view
+        if codigo == "facturador":
+            from modulos.facturador.views.facturador_view import FacturadorView
+            view = FacturadorView()
+            view.volver_dashboard.connect(lambda: self.stack.setCurrentIndex(0))
+            view.logout_signal.connect(self._logout)
+            return view
+        if codigo == "inventario":
+            from modulos.inventario.views.inventario_view import InventarioView
+            view = InventarioView()
+            view.volver_dashboard.connect(lambda: self.stack.setCurrentIndex(0))
+            view.logout_signal.connect(self._logout)
+            return view
+        if codigo == "datos":
+            from modulos.datos.views.datos_view import DatosView
+            view = DatosView()
+            view.volver_dashboard.connect(lambda: self.stack.setCurrentIndex(0))
+            view.logout_signal.connect(self._logout)
+            return view
+        if codigo == "cuentas":
+            from modulos.cuentas.views.cuentas_view import CuentasView
+            view = CuentasView()
+            view.volver_dashboard.connect(lambda: self.stack.setCurrentIndex(0))
+            view.logout_signal.connect(self._logout)
+            return view
+        if codigo == "finanzas":
+            from modulos.finanzas.views.finanzas_view import FinanzasView
+            view = FinanzasView()
+            view.volver_dashboard.connect(lambda: self.stack.setCurrentIndex(0))
+            view.logout_signal.connect(self._logout)
+            return view
+        if codigo == "reportes":
+            from modulos.reportes.views.reportes_view import ReportesView
+            view = ReportesView()
+            view.volver_dashboard.connect(lambda: self.stack.setCurrentIndex(0))
+            view.logout_signal.connect(self._logout)
+            return view
         if codigo == "herramientas":
             from modulos.herramientas.views.herramientas_view import HerramientasView
             view = HerramientasView()
+            view.volver_dashboard.connect(lambda: self.stack.setCurrentIndex(0))
+            view.logout_signal.connect(self._logout)
+            return view
+        if codigo == "conexiones":
+            from modulos.conexiones.views.conexiones_view import ConexionesView
+            view = ConexionesView()
             view.volver_dashboard.connect(lambda: self.stack.setCurrentIndex(0))
             view.logout_signal.connect(self._logout)
             return view

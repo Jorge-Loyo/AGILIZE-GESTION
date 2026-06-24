@@ -7,16 +7,14 @@ import qtawesome as qta
 from ui.theme_manager import theme_manager
 
 
-SUBMODULOS_HERRAMIENTAS = [
-    {"codigo": "limpiador", "label": "Limpiador Productos", "icon": "fa5s.file-excel"},
-    {"codigo": "cotizaciones", "label": "Cotizaciones", "icon": "fa5s.dollar-sign"},
-    {"codigo": "etiquetas_estante", "label": "Etiquetas Estante", "icon": "fa5s.tag"},
-    {"codigo": "etiquetas_producto", "label": "Etiquetas Producto", "icon": "fa5s.barcode"},
-    {"codigo": "config_herramientas", "label": "Configuracion", "icon": "fa5s.cog"},
+SUBMODULOS_CONEXIONES = [
+    {"codigo": "bases_datos", "label": "Bases de Datos", "icon": "fa5s.database"},
+    {"codigo": "apis_json", "label": "APIs / JSON", "icon": "fa5s.plug"},
+    {"codigo": "ecommerce", "label": "E-Commerce", "icon": "fa5s.shopping-bag"},
 ]
 
 
-class HerramientasView(QWidget):
+class ConexionesView(QWidget):
     volver_dashboard = Signal()
     logout_signal = Signal()
 
@@ -30,7 +28,6 @@ class HerramientasView(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
-        # Sidebar
         sidebar = QFrame()
         sidebar.setObjectName("sidebar")
         sidebar.setFixedWidth(200)
@@ -41,26 +38,19 @@ class HerramientasView(QWidget):
         btn_volver = QPushButton("  Menu")
         btn_volver.setIcon(qta.icon("fa5s.arrow-left", color="#8a8a8a"))
         btn_volver.setCursor(Qt.PointingHandCursor)
-        btn_volver.setStyleSheet(
-            "QPushButton { background-color: transparent; color: #8a8a8a; "
-            "border: none; text-align: left; padding: 8px 12px; } "
-            "QPushButton:hover { color: #F8F9FA; }"
-        )
+        btn_volver.setStyleSheet("QPushButton { background-color: transparent; color: #8a8a8a; border: none; text-align: left; padding: 8px 12px; } QPushButton:hover { color: #F8F9FA; }")
         btn_volver.clicked.connect(self.volver_dashboard.emit)
         sidebar_layout.addWidget(btn_volver)
 
         sidebar_layout.addSpacerItem(QSpacerItem(0, 8, QSizePolicy.Minimum, QSizePolicy.Fixed))
-
-        lbl = QLabel("Herramientas")
+        lbl = QLabel("Conexiones")
         lbl.setStyleSheet("font-size: 14px; font-weight: bold; color: #D4AF37;")
         lbl.setAlignment(Qt.AlignCenter)
         sidebar_layout.addWidget(lbl)
-
         sidebar_layout.addSpacerItem(QSpacerItem(0, 12, QSizePolicy.Minimum, QSizePolicy.Fixed))
 
         self.stack = QStackedWidget()
-
-        for i, sub in enumerate(SUBMODULOS_HERRAMIENTAS):
+        for i, sub in enumerate(SUBMODULOS_CONEXIONES):
             btn = QPushButton(f"  {sub['label']}")
             btn.setIcon(qta.icon(sub["icon"], color="#8a8a8a"))
             btn.setCursor(Qt.PointingHandCursor)
@@ -68,58 +58,51 @@ class HerramientasView(QWidget):
             btn.clicked.connect(lambda checked, idx=i: self._navigate(idx))
             sidebar_layout.addWidget(btn)
             self._buttons.append(btn)
-
-            page = self._create_submodule(sub["codigo"])
-            self.stack.addWidget(page)
+            self.stack.addWidget(self._create_submodule(sub["codigo"]))
 
         sidebar_layout.addStretch()
-
         btn_theme = QPushButton("  Cambiar modo")
         btn_theme.setIcon(qta.icon("fa5s.adjust", color="#8a8a8a"))
         btn_theme.setCursor(Qt.PointingHandCursor)
-        btn_theme.clicked.connect(self._toggle_theme)
+        btn_theme.clicked.connect(lambda: theme_manager.toggle(__import__('PySide6.QtWidgets', fromlist=['QApplication']).QApplication.instance()))
         sidebar_layout.addWidget(btn_theme)
-
         sidebar_layout.addSpacerItem(QSpacerItem(0, 4, QSizePolicy.Minimum, QSizePolicy.Fixed))
-
         btn_logout = QPushButton("  Cerrar sesion")
         btn_logout.setIcon(qta.icon("fa5s.sign-out-alt", color="#ffffff"))
         btn_logout.setCursor(Qt.PointingHandCursor)
-        btn_logout.setStyleSheet(
-            "QPushButton { background-color: #ef4444; } "
-            "QPushButton:hover { background-color: #dc2626; }"
-        )
+        btn_logout.setStyleSheet("QPushButton { background-color: #ef4444; } QPushButton:hover { background-color: #dc2626; }")
         btn_logout.clicked.connect(self.logout_signal.emit)
         sidebar_layout.addWidget(btn_logout)
 
         layout.addWidget(sidebar)
         layout.addWidget(self.stack)
-
         if self._buttons:
             self._navigate(0)
 
     def _create_submodule(self, codigo: str) -> QWidget:
-        if codigo == "limpiador":
-            from modulos.herramientas.views.limpiador_view import LimpiadorView
-            return LimpiadorView()
-        if codigo == "cotizaciones":
-            from modulos.herramientas.views.cotizaciones_view import CotizacionesView
-            return CotizacionesView()
-        if codigo == "etiquetas_estante":
-            from modulos.herramientas.views.etiquetas_estante_view import EtiquetasEstanteView
-            return EtiquetasEstanteView()
-        if codigo == "etiquetas_producto":
-            from modulos.herramientas.views.etiquetas_producto_view import EtiquetasProductoView
-            return EtiquetasProductoView()
-        if codigo == "config_herramientas":
-            from modulos.herramientas.views.config_herramientas_view import ConfigHerramientasView
-            return ConfigHerramientasView()
-
         page = QWidget()
         lay = QVBoxLayout(page)
         lay.setContentsMargins(32, 32, 32, 32)
-        lbl = QLabel("En desarrollo")
-        lbl.setObjectName("subtitle")
+        lay.setSpacing(12)
+
+        if codigo == "bases_datos":
+            t = QLabel("Conexiones a Bases de Datos")
+            t.setObjectName("title")
+            lay.addWidget(t)
+            lay.addWidget(QLabel("Conecta con bases de datos externas (MySQL, SQL Server, Oracle, etc.)\npara sincronizar datos con otros sistemas."))
+        elif codigo == "apis_json":
+            t = QLabel("APIs y Archivos JSON")
+            t.setObjectName("title")
+            lay.addWidget(t)
+            lay.addWidget(QLabel("Consume datos desde APIs REST o archivos JSON\npara importar/exportar informacion automaticamente."))
+        elif codigo == "ecommerce":
+            t = QLabel("E-Commerce")
+            t.setObjectName("title")
+            lay.addWidget(t)
+            lay.addWidget(QLabel("Conecta con tu tienda online (WooCommerce, Shopify, MercadoLibre, etc.)\npara sincronizar productos, pedidos y stock."))
+
+        lbl = QLabel("\nProximamente")
+        lbl.setStyleSheet("font-size: 14px; font-weight: bold; color: #D4AF37;")
         lay.addWidget(lbl)
         lay.addStretch()
         return page
@@ -131,7 +114,3 @@ class HerramientasView(QWidget):
             btn.setProperty("active", i == index)
             btn.style().unpolish(btn)
             btn.style().polish(btn)
-
-    def _toggle_theme(self):
-        from PySide6.QtWidgets import QApplication
-        theme_manager.toggle(QApplication.instance())

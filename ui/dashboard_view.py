@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-    QPushButton, QSpacerItem, QSizePolicy,
+    QPushButton, QSpacerItem, QSizePolicy, QGridLayout,
 )
 from PySide6.QtCore import Qt, Signal, QSize
 from PySide6.QtGui import QPixmap
@@ -10,9 +10,17 @@ from services.logo_service import get_dev_logo_path
 from services.empresa_service import empresa_service
 
 ICONOS_MODULO = {
-    "empleados": "fa5s.users",
-    "herramientas": "fa5s.toolbox",
-    "admin": "fa5s.cog",
+    "empleados": "fa5s.user-friends",
+    "ventas": "fa5s.cash-register",
+    "compras": "fa5s.truck-loading",
+    "facturador": "fa5s.barcode",
+    "inventario": "fa5s.warehouse",
+    "cuentas": "fa5s.file-invoice-dollar",
+    "finanzas": "fa5s.chart-pie",
+    "reportes": "fa5s.tachometer-alt",
+    "herramientas": "fa5s.tools",
+    "conexiones": "fa5s.plug",
+    "admin": "fa5s.sliders-h",
 }
 
 
@@ -70,28 +78,31 @@ class DashboardView(QWidget):
 
         layout.addSpacerItem(QSpacerItem(0, 40, QSizePolicy.Minimum, QSizePolicy.Fixed))
 
-        # Grid de modulos
-        grid = QHBoxLayout()
+        # Grid de modulos (2 filas)
+        grid = QGridLayout()
         grid.setAlignment(Qt.AlignCenter)
-        grid.setSpacing(32)
+        grid.setSpacing(20)
 
-        for mod in self._modulos:
+        cols = 6  # 6 columnas por fila
+        for idx, mod in enumerate(self._modulos):
+            row = idx // cols
+            col = idx % cols
             btn = QPushButton(f"\n{mod['label']}")
-            icon_name = ICONOS_MODULO.get(mod["codigo"], "fa5s.cube")
+            icon_name = mod.get("icon") or ICONOS_MODULO.get(mod["codigo"], "fa5s.cube")
             btn.setIcon(qta.icon(icon_name, color="#0f0f0f"))
-            btn.setIconSize(QSize(48, 48))
-            btn.setFixedSize(200, 160)
+            btn.setIconSize(QSize(40, 40))
+            btn.setFixedSize(160, 120)
             btn.setCursor(Qt.PointingHandCursor)
             btn.setStyleSheet("""
                 QPushButton {
-                    font-size: 16px;
+                    font-size: 13px;
                     font-weight: bold;
-                    border-radius: 16px;
+                    border-radius: 14px;
                     color: #0f0f0f;
                 }
             """)
             btn.clicked.connect(lambda checked, c=mod["codigo"]: self.modulo_selected.emit(c))
-            grid.addWidget(btn)
+            grid.addWidget(btn, row, col)
 
         layout.addLayout(grid)
         layout.addStretch()

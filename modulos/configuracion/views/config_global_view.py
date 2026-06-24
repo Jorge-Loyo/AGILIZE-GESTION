@@ -2,6 +2,7 @@ from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QFrame,
     QLineEdit, QPushButton, QLabel, QTabWidget, QFileDialog, QGroupBox,
     QMessageBox, QStackedWidget, QSpacerItem, QSizePolicy, QScrollArea,
+    QComboBox,
 )
 from PySide6.QtCore import Qt, Signal, QSize
 from PySide6.QtGui import QPixmap
@@ -216,6 +217,28 @@ class ConfigGlobalView(QWidget):
         save_row.addWidget(btn)
         layout.addLayout(save_row)
 
+        # Pais
+        grp_pais = QGroupBox("Pais")
+        grp_pais.setStyleSheet(GRP_STYLE)
+        pais_layout = QHBoxLayout(grp_pais)
+        pais_layout.setSpacing(8)
+        lbl_pais = QLabel("Pais de operacion:")
+        lbl_pais.setStyleSheet("font-weight: normal; font-size: 11px; color: #aaa;")
+        pais_layout.addWidget(lbl_pais)
+        self._combo_pais = QComboBox()
+        self._combo_pais.setFixedHeight(28)
+        self._combo_pais.addItems(["Venezuela", "Argentina"])
+        pais_actual = datos.get("cotizacion_pais", "Venezuela")
+        idx_pais = self._combo_pais.findText(pais_actual)
+        if idx_pais >= 0:
+            self._combo_pais.setCurrentIndex(idx_pais)
+        pais_layout.addWidget(self._combo_pais)
+        pais_layout.addStretch()
+        lbl_pais_info = QLabel("Determina IVA, formato de factura e impuestos.")
+        lbl_pais_info.setStyleSheet("font-size: 10px; color: #888;")
+        pais_layout.addWidget(lbl_pais_info)
+        layout.addWidget(grp_pais)
+
         # Sucursales
         grp_suc = QGroupBox("Sucursales")
         grp_suc.setStyleSheet(GRP_STYLE)
@@ -301,6 +324,7 @@ class ConfigGlobalView(QWidget):
 
     def _guardar_empresa(self):
         datos = {clave: inp.text().strip() for clave, inp in self._empresa_inputs.items()}
+        datos["cotizacion_pais"] = self._combo_pais.currentText()
         try:
             empresa_service.guardar_multiples(datos)
             QMessageBox.information(self, "OK", "Datos de empresa guardados.")
