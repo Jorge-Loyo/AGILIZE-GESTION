@@ -40,6 +40,14 @@ class LimpiadorView(QWidget):
         self.btn_exportar.clicked.connect(self._on_exportar)
         header.addWidget(self.btn_exportar)
 
+        self.btn_pagina = QPushButton("  Archivo Pagina")
+        self.btn_pagina.setIcon(qta.icon("fa5s.globe", color="#0f0f0f"))
+        self.btn_pagina.setCursor(Qt.PointingHandCursor)
+        self.btn_pagina.setFixedHeight(36)
+        self.btn_pagina.setEnabled(False)
+        self.btn_pagina.clicked.connect(self._on_exportar_pagina)
+        header.addWidget(self.btn_pagina)
+
         layout.addLayout(header)
 
         # Info
@@ -79,11 +87,11 @@ class LimpiadorView(QWidget):
 
         # Table
         self.tabla = QTableWidget()
-        self.tabla.setColumnCount(9)
+        self.tabla.setColumnCount(11)
         self.tabla.setHorizontalHeaderLabels([
             "Codigo", "Descripcion", "Costo", "Precio sin IVA",
             "Precio con IVA", "% Utilidad", "Stock",
-            "USD sin IVA", "USD con IVA"
+            "USD sin IVA", "USD con IVA", "USD s/IVA Rd", "USD c/IVA Rd"
         ])
         self.tabla.setAlternatingRowColors(True)
         self.tabla.setEditTriggers(QTableWidget.NoEditTriggers)
@@ -93,7 +101,7 @@ class LimpiadorView(QWidget):
         h = self.tabla.horizontalHeader()
         h.setSectionResizeMode(0, QHeaderView.ResizeToContents)
         h.setSectionResizeMode(1, QHeaderView.Stretch)
-        for i in range(2, 9):
+        for i in range(2, 11):
             h.setSectionResizeMode(i, QHeaderView.ResizeToContents)
         layout.addWidget(self.tabla, 1)
 
@@ -249,6 +257,7 @@ class LimpiadorView(QWidget):
         self.btn_cargar.setEnabled(True)
         self.btn_cargar.setText("  Cargar Excel")
         self.btn_exportar.setEnabled(True)
+        self.btn_pagina.setEnabled(True)
 
         master = service.master
         resumen = service.resumen()
@@ -282,11 +291,17 @@ class LimpiadorView(QWidget):
             if cotizacion and cotizacion > 0:
                 usd_sin_iva = p.precio_sin_iva / cotizacion
                 usd_con_iva = p.precio_con_iva / cotizacion
+                usd_sin_iva_rd = self._redondear_arriba_05(usd_sin_iva)
+                usd_con_iva_rd = self._redondear_arriba_05(usd_con_iva)
                 self.tabla.setItem(i, 7, self._num_item(usd_sin_iva))
                 self.tabla.setItem(i, 8, self._num_item(usd_con_iva))
+                self.tabla.setItem(i, 9, self._num_item(usd_sin_iva_rd))
+                self.tabla.setItem(i, 10, self._num_item(usd_con_iva_rd))
             else:
                 self.tabla.setItem(i, 7, QTableWidgetItem("---"))
                 self.tabla.setItem(i, 8, QTableWidgetItem("---"))
+                self.tabla.setItem(i, 9, QTableWidgetItem("---"))
+                self.tabla.setItem(i, 10, QTableWidgetItem("---"))
 
     def _on_error(self, msg: str):
         self.btn_cargar.setEnabled(True)
@@ -312,6 +327,69 @@ class LimpiadorView(QWidget):
             )
         except Exception as e:
             QMessageBox.critical(self, "Error", str(e))
+
+    def _on_exportar_pagina(self):
+        """Genera archivo para pagina web: codigo, descripcion, USD con IVA redondeado, stock."""
+        ruta, _ = QFileDialog.getSaveFileName(
+            self, "Guardar archivo para pagina",
+            "Productos_Pagina.xlsx", "Excel (*.xlsx);;CSV (*.csv)"
+        )
+        if not ruta:
+            return
+
+        try:
+            from services.limpiador_service import limpiador_service
+            import math
+
+            master = limpiador_service.master
+            if not master:
+                QMessageBox.warning(self, "Error", "No hay datos cargados.")
+                return
+
+            cotizacion = self._cotizacion_actual
+            if not cotizacion or cotizacion <= 0:
+                QMessageBox.warning(self, "Error", "No hay cotizacion disponible para calcular USD.")
+                return
+
+            rows = []
+            for p in master.productos:
+                codigo = p.codigo.strip()
+                descripcion = p.descripcion.strip()
+                if not codigo or not descripcion:
+                    continue
+
+                usd_con_iva = p.precio_con_iva / cotizacion
+                usd_redondeado = math.ceil(usd_con_iva * 20) / 20
+                stock = max(0, p.stock)
+
+                rows.append({
+                    "Codigo": codigo,
+                    "Descripcion": descripcion,
+                    "Precio_USD": round(usd_redondeado, 2),
+                    "Stock": stock,
+                })
+
+            import pandas as pd
+            df = pd.DataFrame(rows)
+
+            if ruta.endswith(".csv"):
+                df.to_csv(ruta, index=False, encoding="utf-8")
+            else:
+                df.to_excel(ruta, index=False, sheet_name="Productos")
+
+            QMessageBox.information(
+                self, "Archivo Generado",
+                f"Archivo para pagina generado con {len(rows)} productos:\n\n{ruta}"
+            )
+        except Exception as e:
+            QMessageBox.critical(self, "Error", str(e))
+
+    @staticmethod
+    def _redondear_arriba_05(valor: float) -> float:
+        """Redondea hacia arriba al 0.05 mas cercano.
+        Ej: 2.56 -> 2.60, 1.44 -> 1.45, 3.01 -> 3.05, 5.00 -> 5.00"""
+        import math
+        return math.ceil(valor * 20) / 20
 
     @staticmethod
     def _num_item(value) -> QTableWidgetItem:

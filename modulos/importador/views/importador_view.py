@@ -7,22 +7,13 @@ import qtawesome as qta
 from ui.theme_manager import theme_manager
 
 
-SUBMODULOS_COMPRAS = [
-    {"codigo": "proveedores", "label": "Proveedores", "icon": "fa5s.truck"},
-    {"codigo": "requisiciones", "label": "Requerimientos", "icon": "fa5s.hand-paper"},
-    {"codigo": "req_sugerido", "label": "Req. Sugerido", "icon": "fa5s.magic"},
-    {"codigo": "ordenes_compra", "label": "Ordenes de Compra", "icon": "fa5s.clipboard-list"},
-    {"codigo": "recepcion", "label": "Recepcion", "icon": "fa5s.dolly"},
-    {"codigo": "facturas_compra", "label": "Facturas", "icon": "fa5s.file-invoice"},
-    {"codigo": "precios", "label": "Listas de Precios", "icon": "fa5s.tags"},
-    {"codigo": "cotizaciones", "label": "Cotizaciones", "icon": "fa5s.balance-scale"},
-    {"codigo": "aprobaciones", "label": "Aprobaciones", "icon": "fa5s.user-check"},
-    {"codigo": "trazabilidad", "label": "Trazabilidad", "icon": "fa5s.project-diagram"},
-    {"codigo": "reportes", "label": "Reportes KPI", "icon": "fa5s.chart-line"},
+SUBMODULOS_IMPORTADOR = [
+    {"codigo": "importar_productos", "label": "Importar Productos", "icon": "fa5s.file-import"},
+    {"codigo": "actualizar_precios", "label": "Actualizar Precios", "icon": "fa5s.sync-alt"},
 ]
 
 
-class ComprasView(QWidget):
+class ImportadorView(QWidget):
     volver_dashboard = Signal()
     logout_signal = Signal()
 
@@ -51,14 +42,14 @@ class ComprasView(QWidget):
         sidebar_layout.addWidget(btn_volver)
 
         sidebar_layout.addSpacerItem(QSpacerItem(0, 8, QSizePolicy.Minimum, QSizePolicy.Fixed))
-        lbl = QLabel("Compras")
+        lbl = QLabel("Importador")
         lbl.setStyleSheet("font-size: 14px; font-weight: bold; color: #D4AF37;")
         lbl.setAlignment(Qt.AlignCenter)
         sidebar_layout.addWidget(lbl)
         sidebar_layout.addSpacerItem(QSpacerItem(0, 12, QSizePolicy.Minimum, QSizePolicy.Fixed))
 
         self.stack = QStackedWidget()
-        for i, sub in enumerate(SUBMODULOS_COMPRAS):
+        for i, sub in enumerate(SUBMODULOS_IMPORTADOR):
             btn = QPushButton(f"  {sub['label']}")
             btn.setIcon(qta.icon(sub["icon"], color="#8a8a8a"))
             btn.setCursor(Qt.PointingHandCursor)
@@ -88,39 +79,12 @@ class ComprasView(QWidget):
             self._navigate(0)
 
     def _create_submodule(self, codigo: str) -> QWidget:
-        if codigo == "proveedores":
-            from modulos.datos.views.proveedores_view import ProveedoresView
-            return ProveedoresView()
-        if codigo == "requisiciones":
-            from modulos.compras.views.requisiciones_view import RequisicionesView
-            return RequisicionesView()
-        if codigo == "req_sugerido":
-            from modulos.compras.views.orden_sugerida_view import ReqSugeridoView
-            return ReqSugeridoView()
-        if codigo == "ordenes_compra":
-            from modulos.compras.views.ordenes_compra_view import OrdenesCompraView
-            return OrdenesCompraView()
-        if codigo == "recepcion":
-            from modulos.compras.views.recepcion_view import RecepcionView
-            return RecepcionView()
-        if codigo == "facturas_compra":
-            from modulos.compras.views.facturas_compra_view import FacturasCompraView
-            return FacturasCompraView()
-        if codigo == "precios":
-            from modulos.compras.views.precios_proveedores_view import PreciosProveedoresView
-            return PreciosProveedoresView()
-        if codigo == "cotizaciones":
-            from modulos.compras.views.cotizaciones_compra_view import CotizacionesCompraView
-            return CotizacionesCompraView()
-        if codigo == "aprobaciones":
-            from modulos.compras.views.aprobaciones_compra_view import AprobacionesCompraView
-            return AprobacionesCompraView()
-        if codigo == "trazabilidad":
-            from modulos.compras.views.trazabilidad_view import TrazabilidadCompraView
-            return TrazabilidadCompraView()
-        if codigo == "reportes":
-            from modulos.compras.views.reportes_compras_view import ReportesComprasView
-            return ReportesComprasView()
+        if codigo == "importar_productos":
+            from modulos.importador.views.importar_productos_view import ImportarProductosView
+            return ImportarProductosView()
+        if codigo == "actualizar_precios":
+            from modulos.importador.views.actualizar_precios_view import ActualizarPreciosView
+            return ActualizarPreciosView()
         return QWidget()
 
     def _navigate(self, index: int):

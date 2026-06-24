@@ -50,7 +50,7 @@ def upgrade() -> None:
     ), {"mid": modulo_id})
     for (pid,) in permisos:
         conn.execute(sa.text(
-            "INSERT INTO roles_permisos (rol_id, permiso_id) VALUES (:rid, :pid) "
+            "INSERT INTO rol_permisos (rol_id, permiso_id) VALUES (:rid, :pid) "
             "ON CONFLICT DO NOTHING"
         ), {"rid": admin_id, "pid": pid})
 
@@ -61,6 +61,6 @@ def downgrade() -> None:
     row = result.fetchone()
     if row:
         modulo_id = row[0]
-        conn.execute(sa.text("DELETE FROM roles_permisos WHERE permiso_id IN (SELECT id FROM permisos WHERE modulo_id = :mid)"), {"mid": modulo_id})
+        conn.execute(sa.text("DELETE FROM rol_permisos WHERE permiso_id IN (SELECT id FROM permisos WHERE modulo_id = :mid)"), {"mid": modulo_id})
         conn.execute(sa.text("DELETE FROM permisos WHERE modulo_id = :mid"), {"mid": modulo_id})
         conn.execute(sa.text("DELETE FROM modulos WHERE id = :mid"), {"mid": modulo_id})

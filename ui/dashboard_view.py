@@ -20,6 +20,8 @@ ICONOS_MODULO = {
     "reportes": "fa5s.tachometer-alt",
     "herramientas": "fa5s.tools",
     "conexiones": "fa5s.plug",
+    "importador": "fa5s.file-import",
+    "administrador": "fa5s.th-list",
     "admin": "fa5s.sliders-h",
 }
 
@@ -83,21 +85,21 @@ class DashboardView(QWidget):
         grid.setAlignment(Qt.AlignCenter)
         grid.setSpacing(20)
 
-        cols = 6  # 6 columnas por fila
+        cols = 7  # 7 columnas por fila
         for idx, mod in enumerate(self._modulos):
             row = idx // cols
             col = idx % cols
             btn = QPushButton(f"\n{mod['label']}")
             icon_name = mod.get("icon") or ICONOS_MODULO.get(mod["codigo"], "fa5s.cube")
             btn.setIcon(qta.icon(icon_name, color="#0f0f0f"))
-            btn.setIconSize(QSize(40, 40))
-            btn.setFixedSize(160, 120)
+            btn.setIconSize(QSize(32, 32))
+            btn.setFixedSize(140, 100)
             btn.setCursor(Qt.PointingHandCursor)
             btn.setStyleSheet("""
                 QPushButton {
-                    font-size: 13px;
+                    font-size: 11px;
                     font-weight: bold;
-                    border-radius: 14px;
+                    border-radius: 12px;
                     color: #0f0f0f;
                 }
             """)

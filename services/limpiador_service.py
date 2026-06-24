@@ -133,6 +133,7 @@ class LimpiadorService:
         if not self._master:
             raise ValueError("No hay datos cargados para exportar.")
         ruta = Path(ruta)
+        import math
         rows = []
         for p in self._master.productos:
             row = {
@@ -145,8 +146,14 @@ class LimpiadorService:
                 "Stock": p.stock,
             }
             if cotizacion and cotizacion > 0:
-                row["USD sin IVA"] = round(p.precio_sin_iva / cotizacion, 2)
-                row["USD con IVA"] = round(p.precio_con_iva / cotizacion, 2)
+                usd_sin = p.precio_sin_iva / cotizacion
+                usd_con = p.precio_con_iva / cotizacion
+                usd_sin_rd = math.ceil(usd_sin * 20) / 20
+                usd_con_rd = math.ceil(usd_con * 20) / 20
+                row["USD sin IVA"] = round(usd_sin, 8)
+                row["USD con IVA"] = round(usd_con, 8)
+                row["USD sin IVA Redondeado"] = round(usd_sin_rd, 2)
+                row["USD con IVA Redondeado"] = round(usd_con_rd, 2)
             rows.append(row)
         df = pd.DataFrame(rows)
         df.to_excel(ruta, index=False, sheet_name="Maestro de Productos")
