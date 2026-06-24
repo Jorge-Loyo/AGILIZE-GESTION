@@ -31,19 +31,35 @@ class CajaPOSService:
 
     # === TURNOS ===
     def abrir_turno(self, caja_id: int, fondo_inicial: float = 0) -> TurnoCaja:
-        """Abre turno/sesion de caja. Verifica que no haya turno abierto."""
+        """Abre turno/sesion de caja. Verifica que no haya turno abierto en esta caja ni por este usuario."""
         with get_db() as db:
+            cajero_id = auth_service.current_user.id if auth_service.current_user else 0
+
             # Verificar que no haya turno abierto en esta caja
-            turno_abierto = db.query(TurnoCaja).filter(
+            turno_caja = db.query(TurnoCaja).filter(
                 TurnoCaja.caja_id == caja_id,
                 TurnoCaja.estado == "abierto",
             ).first()
-            if turno_abierto:
-                raise ValueError("Ya hay un turno abierto en esta caja. Cierre primero.")
+            if turno_caja:
+                from models.usuario import Usuario
+                u = db.get(Usuario, turno_caja.cajero_id)
+                nombre = u.nombre_completo if u else f"Usuario #{turno_caja.cajero_id}"
+                raise ValueError(f"Caja ya tiene turno abierto por: {nombre}")
+
+            # Verificar que este usuario no tenga turno abierto en otra caja
+            turno_usuario = db.query(TurnoCaja).filter(
+                TurnoCaja.cajero_id == cajero_id,
+                TurnoCaja.estado == "abierto",
+            ).first()
+            if turno_usuario:
+                from models.caja_pos import CajaPOS
+                caja = db.get(CajaPOS, turno_usuario.caja_id)
+                nombre_caja = caja.nombre if caja else f"Caja #{turno_usuario.caja_id}"
+                raise ValueError(f"Ya tienes un turno abierto en: {nombre_caja}. Cierra primero.")
 
             turno = TurnoCaja(
                 caja_id=caja_id,
-                cajero_id=auth_service.current_user.id if auth_service.current_user else 0,
+                cajero_id=cajero_id,
                 fecha=_hoy(),
                 hora_apertura=_ahora(),
                 fondo_inicial=fondo_inicial,
@@ -65,11 +81,15 @@ class CajaPOSService:
 
     # === MOVIMIENTOS ===
     def registrar_venta(self, turno_id: int, monto: float, medio_pago: str, referencia: str = "", detalle_medios: dict = None):
-        """Registra venta en la caja. Para pagos partidos, detalle_medios es un dict."""
+        """Registra venta en la caja. Valida que el turno sea del usuario actual."""
         with get_db() as db:
             turno = db.get(TurnoCaja, turno_id)
             if not turno or turno.estado != "abierto":
                 raise ValueError("Turno no activo")
+            # Validar que el turno pertenece al usuario actual
+            cajero_id = auth_service.current_user.id if auth_service.current_user else 0
+            if turno.cajero_id != cajero_id:
+                raise ValueError("Este turno pertenece a otro cajero")
 
             # Guardar detalle de medios para pagos mixtos
             detalle_json = json.dumps(detalle_medios) if detalle_medios else ""
