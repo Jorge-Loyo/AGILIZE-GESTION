@@ -413,10 +413,37 @@ class FacturadorView(QWidget):
         row_medio = QHBoxLayout()
         row_medio.addWidget(QLabel("Medio:"))
         combo_medio = QComboBox()
-        combo_medio.addItems(["Efectivo", "Tarjeta Debito", "Tarjeta Credito", "Transferencia", "Mixto"])
+        combo_medio.addItems(["Efectivo", "Tarjeta Debito", "Tarjeta Credito", "Transferencia"])
         combo_medio.setFixedHeight(30)
         row_medio.addWidget(combo_medio)
+
+        # Pago partido
+        chk_partido = None
+        from PySide6.QtWidgets import QCheckBox
+        chk_partido = QCheckBox("Pago partido")
+        row_medio.addWidget(chk_partido)
         lay.addLayout(row_medio)
+
+        # Frame pago partido (oculto por defecto)
+        frame_partido = QFrame()
+        frame_partido.setVisible(False)
+        fp_lay = QHBoxLayout(frame_partido)
+        fp_lay.setContentsMargins(0, 0, 0, 0)
+        fp_lay.addWidget(QLabel("Efectivo: $"))
+        input_efectivo = QLineEdit()
+        input_efectivo.setFixedHeight(28)
+        input_efectivo.setFixedWidth(80)
+        input_efectivo.setMaxLength(12)
+        fp_lay.addWidget(input_efectivo)
+        fp_lay.addWidget(QLabel("Tarjeta: $"))
+        input_tarjeta = QLineEdit()
+        input_tarjeta.setFixedHeight(28)
+        input_tarjeta.setFixedWidth(80)
+        input_tarjeta.setMaxLength(12)
+        fp_lay.addWidget(input_tarjeta)
+        fp_lay.addStretch()
+        lay.addWidget(frame_partido)
+        chk_partido.toggled.connect(frame_partido.setVisible)
 
         # Monto recibido
         row_recibido = QHBoxLayout()
@@ -466,6 +493,13 @@ class FacturadorView(QWidget):
         try:
             recibido = float(input_recibido.text().replace(",", "").replace("$", "") or str(total))
             medio = combo_medio.currentText().lower().replace(" ", "_")
+            detalle_medios = None
+            if chk_partido and chk_partido.isChecked():
+                ef = float(input_efectivo.text() or "0")
+                tj = float(input_tarjeta.text() or "0")
+                medio = "mixto"
+                detalle_medios = {"efectivo": ef, "tarjeta_debito": tj}
+                recibido = ef + tj
 
             from services.ventas.motor_facturacion import motor_facturacion
             items_factura = [{
@@ -480,6 +514,19 @@ class FacturadorView(QWidget):
                 monto_recibido=recibido,
                 punto_venta=self._config.codigo if self._config else "0001",
             )
+
+            # Registrar en caja si hay turno abierto
+            try:
+                from services.ventas.caja_pos_service import caja_pos_service
+                turno = caja_pos_service.turno_activo()
+                if turno:
+                    caja_pos_service.registrar_venta(
+                        turno.id, total, medio,
+                        referencia=resultado["factura_numero"],
+                        detalle_medios=detalle_medios,
+                    )
+            except Exception:
+                pass
 
             vuelto_txt = f"\nVuelto: $ {resultado['vuelto']:,.2f}" if resultado['vuelto'] > 0 else ""
             QMessageBox.information(self, "Venta Exitosa",
