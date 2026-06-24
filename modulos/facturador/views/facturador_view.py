@@ -397,38 +397,95 @@ class FacturadorView(QWidget):
         subtotal = sum(i["subtotal"] for i in self._items)
         total = subtotal + (subtotal * iva_pct / 100)
 
-        resp = QMessageBox.question(self, "Confirmar Cobro", f"Total: $ {total:,.2f}\nConfirmar?", QMessageBox.Yes | QMessageBox.No)
-        if resp != QMessageBox.Yes:
+        # Modal de cobro rapido
+        dlg = QDialog(self)
+        dlg.setWindowTitle("Cobro Rapido")
+        dlg.setMinimumWidth(380)
+        lay = QVBoxLayout(dlg)
+        lay.setSpacing(12)
+
+        lbl_total = QLabel(f"TOTAL: $ {total:,.2f}")
+        lbl_total.setStyleSheet("font-size: 22px; font-weight: bold; color: #D4AF37;")
+        lbl_total.setAlignment(Qt.AlignCenter)
+        lay.addWidget(lbl_total)
+
+        # Medio de pago
+        row_medio = QHBoxLayout()
+        row_medio.addWidget(QLabel("Medio:"))
+        combo_medio = QComboBox()
+        combo_medio.addItems(["Efectivo", "Tarjeta Debito", "Tarjeta Credito", "Transferencia", "Mixto"])
+        combo_medio.setFixedHeight(30)
+        row_medio.addWidget(combo_medio)
+        lay.addLayout(row_medio)
+
+        # Monto recibido
+        row_recibido = QHBoxLayout()
+        row_recibido.addWidget(QLabel("Recibido: $"))
+        input_recibido = QLineEdit()
+        input_recibido.setFixedHeight(36)
+        input_recibido.setStyleSheet("font-size: 18px;")
+        input_recibido.setPlaceholderText(f"{total:,.2f}")
+        input_recibido.setMaxLength(15)
+        row_recibido.addWidget(input_recibido)
+        lay.addLayout(row_recibido)
+
+        # Vuelto
+        lbl_vuelto = QLabel("Vuelto: $ 0.00")
+        lbl_vuelto.setStyleSheet("font-size: 18px; font-weight: bold; color: #10b981;")
+        lbl_vuelto.setAlignment(Qt.AlignCenter)
+        lay.addWidget(lbl_vuelto)
+
+        def actualizar_vuelto():
+            try:
+                recibido = float(input_recibido.text().replace(",", "").replace("$", "") or "0")
+                v = max(0, recibido - total)
+                lbl_vuelto.setText(f"Vuelto: $ {v:,.2f}")
+            except ValueError:
+                lbl_vuelto.setText("Vuelto: $ 0.00")
+        input_recibido.textChanged.connect(actualizar_vuelto)
+
+        # Botones
+        btns = QHBoxLayout()
+        btn_cancel = QPushButton("Cancelar")
+        btn_cancel.setFixedHeight(36)
+        btn_cancel.clicked.connect(dlg.reject)
+        btns.addWidget(btn_cancel)
+        btn_confirmar = QPushButton("  Confirmar Cobro")
+        btn_confirmar.setIcon(qta.icon("fa5s.check", color="#ffffff"))
+        btn_confirmar.setFixedHeight(36)
+        btn_confirmar.setStyleSheet("QPushButton { background-color: #10b981; font-weight: bold; } QPushButton:hover { background-color: #059669; }")
+        btn_confirmar.clicked.connect(dlg.accept)
+        btns.addWidget(btn_confirmar)
+        lay.addLayout(btns)
+
+        input_recibido.setFocus()
+        if dlg.exec() != QDialog.Accepted:
             return
 
+        # Procesar venta
         try:
-            from services.finanzas.finanzas_service import finanzas_service
-            from services.inventario import inventario_service
+            recibido = float(input_recibido.text().replace(",", "").replace("$", "") or str(total))
+            medio = combo_medio.currentText().lower().replace(" ", "_")
 
-            items_factura = [{"descripcion": i["nombre"], "cantidad": i["cantidad"], "precio_unitario": i["precio"]} for i in self._items]
-            datos = {
-                "tipo_comprobante": "factura",
-                "letra": "B" if pais == "Argentina" else "",
-                "tipo_entidad": "cliente",
-                "entidad_nombre": "Consumidor Final",
-                "impuesto_porcentaje": iva_pct,
-            }
-            finanzas_service.crear_factura(datos, items_factura)
+            from services.ventas.motor_facturacion import motor_facturacion
+            items_factura = [{
+                "codigo": i["codigo"], "nombre": i["nombre"],
+                "cantidad": i["cantidad"], "precio": i["precio"],
+                "deposito_id": i["deposito_id"],
+            } for i in self._items]
 
-            # Descontar stock de los depositos correspondientes
-            for item in self._items:
-                try:
-                    from services.inventario import inventario_service
-                    productos = inventario_service.buscar_productos(item["codigo"])
-                    if productos:
-                        inventario_service.registrar_salida(
-                            productos[0].id, item["deposito_id"], item["cantidad"],
-                            motivo="Venta facturador", referencia=self._config.codigo
-                        )
-                except Exception:
-                    pass
+            resultado = motor_facturacion.facturar_pos(
+                items=items_factura,
+                medio_pago=medio,
+                monto_recibido=recibido,
+                punto_venta=self._config.codigo if self._config else "0001",
+            )
 
-            QMessageBox.information(self, "Venta", f"Factura emitida por $ {total:,.2f}")
+            vuelto_txt = f"\nVuelto: $ {resultado['vuelto']:,.2f}" if resultado['vuelto'] > 0 else ""
+            QMessageBox.information(self, "Venta Exitosa",
+                f"Factura: {resultado['factura_numero']}\n"
+                f"Total: $ {resultado['total']:,.2f}{vuelto_txt}")
+
             self._items.clear()
             self._actualizar_tabla()
         except Exception as e:
