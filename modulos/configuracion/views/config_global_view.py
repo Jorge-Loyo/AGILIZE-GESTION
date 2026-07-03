@@ -5,9 +5,9 @@ from PySide6.QtWidgets import (
     QComboBox,
 )
 from PySide6.QtCore import Qt, Signal, QSize
-from PySide6.QtGui import QPixmap
+from PySide6.QtGui import QPixmap, QImage
 from pathlib import Path
-import shutil
+import base64
 import qtawesome as qta
 from ui.theme_manager import theme_manager
 from services.core.empresa_service import empresa_service
@@ -375,18 +375,15 @@ class ConfigGlobalView(QWidget):
         self.lbl_logo_preview.setFixedSize(80, 80)
         self.lbl_logo_preview.setAlignment(Qt.AlignCenter)
         self.lbl_logo_preview.setStyleSheet("border: 1px solid #333; border-radius: 10px; background-color: #1a1a1a;")
-        logo_actual = datos.get("logo_path", "")
-        if logo_actual and Path(logo_actual).exists():
-            pixmap = QPixmap(logo_actual).scaled(70, 70, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-            self.lbl_logo_preview.setPixmap(pixmap)
+        self._cargar_logo_preview(datos)
         logo_layout.addWidget(self.lbl_logo_preview)
 
         logo_info = QVBoxLayout()
         logo_info.setSpacing(6)
-        self.lbl_logo_path = QLabel(logo_actual if logo_actual else "Sin logo cargado")
-        self.lbl_logo_path.setObjectName("subtitle")
-        self.lbl_logo_path.setWordWrap(True)
-        logo_info.addWidget(self.lbl_logo_path)
+        self.lbl_logo_status = QLabel("Logo cargado" if datos.get("logo_base64") else "Sin logo cargado")
+        self.lbl_logo_status.setObjectName("subtitle")
+        self.lbl_logo_status.setWordWrap(True)
+        logo_info.addWidget(self.lbl_logo_status)
         btn_logo = QPushButton("  Seleccionar imagen")
         btn_logo.setFixedHeight(28)
         btn_logo.setFixedWidth(160)
@@ -425,19 +422,30 @@ class ConfigGlobalView(QWidget):
 
     def _seleccionar_logo(self):
         filepath, _ = QFileDialog.getOpenFileName(
-            self, "Seleccionar Logo", "", "Imagenes (*.png *.jpg *.jpeg *.svg *.ico)"
+            self, "Seleccionar Logo", "", "Imagenes (*.png *.jpg *.jpeg *.ico)"
         )
         if filepath:
-            dest = BASE_DIR / "assets" / "logos" / Path(filepath).name
-            shutil.copy2(filepath, str(dest))
-            self.lbl_logo_path.setText(str(dest))
-            pixmap = QPixmap(str(dest)).scaled(100, 100, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            with open(filepath, "rb") as f:
+                img_bytes = f.read()
+            b64 = base64.b64encode(img_bytes).decode("utf-8")
+            empresa_service.guardar("logo_base64", b64)
+            pixmap = QPixmap(filepath).scaled(70, 70, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            self.lbl_logo_preview.setPixmap(pixmap)
+            self.lbl_logo_status.setText("Logo cargado")
+            QMessageBox.information(self, "OK", "Logo guardado en base de datos.")
+
+    def _cargar_logo_preview(self, datos: dict):
+        b64 = datos.get("logo_base64", "")
+        if b64:
+            img_bytes = base64.b64decode(b64)
+            img = QImage()
+            img.loadFromData(img_bytes)
+            pixmap = QPixmap.fromImage(img).scaled(70, 70, Qt.KeepAspectRatio, Qt.SmoothTransformation)
             self.lbl_logo_preview.setPixmap(pixmap)
 
     def _guardar_visual(self):
         datos = {
             "nombre_app": self.input_nombre_app.text().strip(),
-            "logo_path": self.lbl_logo_path.text(),
         }
         try:
             empresa_service.guardar_multiples(datos)
@@ -478,15 +486,12 @@ class ConfigGlobalView(QWidget):
         self.lbl_dev_logo_preview.setFixedSize(56, 56)
         self.lbl_dev_logo_preview.setAlignment(Qt.AlignCenter)
         self.lbl_dev_logo_preview.setStyleSheet("border: 1px solid #333; border-radius: 8px; background-color: #1a1a1a;")
-        dev_logo = datos.get("dev_logo_path", "")
-        if dev_logo and Path(dev_logo).exists():
-            pixmap = QPixmap(dev_logo).scaled(48, 48, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-            self.lbl_dev_logo_preview.setPixmap(pixmap)
+        self._cargar_dev_logo_preview(datos)
         top_row.addWidget(self.lbl_dev_logo_preview)
 
-        self.lbl_dev_logo_path = QLabel(dev_logo if dev_logo else "Sin logo")
-        self.lbl_dev_logo_path.setObjectName("subtitle")
-        top_row.addWidget(self.lbl_dev_logo_path, 1)
+        self.lbl_dev_logo_status = QLabel("Logo cargado" if datos.get("dev_logo_base64") else "Sin logo")
+        self.lbl_dev_logo_status.setObjectName("subtitle")
+        top_row.addWidget(self.lbl_dev_logo_status, 1)
 
         btn_dev_logo = QPushButton("Cambiar logo")
         btn_dev_logo.setFixedHeight(30)
@@ -671,16 +676,28 @@ class ConfigGlobalView(QWidget):
         scroll.setWidget(wrapper)
         return scroll
 
+    def _cargar_dev_logo_preview(self, datos: dict):
+        b64 = datos.get("dev_logo_base64", "")
+        if b64:
+            img_bytes = base64.b64decode(b64)
+            img = QImage()
+            img.loadFromData(img_bytes)
+            pixmap = QPixmap.fromImage(img).scaled(48, 48, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            self.lbl_dev_logo_preview.setPixmap(pixmap)
+
     def _seleccionar_dev_logo(self):
         filepath, _ = QFileDialog.getOpenFileName(
-            self, "Seleccionar Logo Desarrollador", "", "Imagenes (*.png *.jpg *.jpeg *.svg *.ico)"
+            self, "Seleccionar Logo Desarrollador", "", "Imagenes (*.png *.jpg *.jpeg *.ico)"
         )
         if filepath:
-            dest = BASE_DIR / "assets" / "logos" / ("dev_" + Path(filepath).name)
-            shutil.copy2(filepath, str(dest))
-            self.lbl_dev_logo_path.setText(str(dest))
-            pixmap = QPixmap(str(dest)).scaled(90, 90, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            with open(filepath, "rb") as f:
+                img_bytes = f.read()
+            b64 = base64.b64encode(img_bytes).decode("utf-8")
+            empresa_service.guardar("dev_logo_base64", b64)
+            pixmap = QPixmap(filepath).scaled(48, 48, Qt.KeepAspectRatio, Qt.SmoothTransformation)
             self.lbl_dev_logo_preview.setPixmap(pixmap)
+            self.lbl_dev_logo_status.setText("Logo cargado")
+            QMessageBox.information(self, "OK", "Logo desarrollador guardado en base de datos.")
 
     def _actualizar_info_moneda(self, pais=None):
         from services.core.pais_config_service import PAISES
@@ -718,14 +735,9 @@ class ConfigGlobalView(QWidget):
 
     def _guardar_dev(self):
         datos = {clave: inp.text().strip() for clave, inp in self._dev_inputs.items()}
-        datos["dev_logo_path"] = self.lbl_dev_logo_path.text()
         try:
             empresa_service.guardar_multiples(datos)
-            # Actualizar icono de la app en tiempo real
-            from PySide6.QtWidgets import QApplication
-            from PySide6.QtGui import QIcon
-            QApplication.instance().setWindowIcon(QIcon(datos["dev_logo_path"]))
-            QMessageBox.information(self, "OK", "Datos del desarrollador guardados. El logo se actualizo.")
+            QMessageBox.information(self, "OK", "Datos del desarrollador guardados.")
         except Exception as e:
             QMessageBox.critical(self, "Error", str(e))
 
