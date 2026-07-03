@@ -14,6 +14,7 @@ from modulos.rrhh.views.editar_concepto_dialog import EditarConceptoDialog
 from services.rrhh.config_nomina_service import config_nomina_service
 from services.rrhh.permiso_ausencia_service import permiso_ausencia_service
 from services.core.empresa_service import empresa_service
+from services.core.pais_config_service import moneda
 from core.config import BASE_DIR
 
 
@@ -277,7 +278,7 @@ class ConfigRRHHView(QWidget):
             if c.porcentaje:
                 valor_str = f"{c.porcentaje}%"
             elif c.monto_fijo:
-                valor_str = f"$ {c.monto_fijo:,.2f}"
+                valor_str = f"{moneda()} {c.monto_fijo:,.2f}"
             else:
                 valor_str = ""
             self.tabla_conceptos.setItem(i, 0, QTableWidgetItem(c.codigo))

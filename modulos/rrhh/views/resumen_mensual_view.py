@@ -11,6 +11,7 @@ from services.rrhh.cierre_service import cierre_service
 from services.rrhh.calculo_asistencia_service import calculo_asistencia_service
 from services.rrhh.empleado_service import empleado_service
 from services.rrhh.nomina_service import nomina_service
+from services.core.pais_config_service import moneda
 
 
 class ResumenMensualView(QWidget):
@@ -151,8 +152,8 @@ class ResumenMensualView(QWidget):
                 str(calc["dias_trabajados"]),
                 str(calc["hs_normales"]),
                 str(calc["hs_extra"]),
-                f"$ {calc['bruto']:,.2f}",
-                f"$ {liquidado:,.2f}" if liq else "-",
+                f"{moneda()} {calc['bruto']:,.2f}",
+                f"{moneda()} {liquidado:,.2f}" if liq else "-",
                 estado,
             ))
 
@@ -166,8 +167,8 @@ class ResumenMensualView(QWidget):
 
         vista_label = {"mes": "Mes completo", "q1": "Quincena 1", "q2": "Quincena 2"}[vista]
         self.lbl_totales.setText(
-            f"{vista_label}  |  Total Bruto: $ {total_bruto:,.2f}  |  "
-            f"Total Liquidado: $ {total_liquidado:,.2f}  |  Empleados: {len(filas)}"
+            f"{vista_label}  |  Total Bruto: {moneda()} {total_bruto:,.2f}  |  "
+            f"Total Liquidado: {moneda()} {total_liquidado:,.2f}  |  Empleados: {len(filas)}"
         )
 
     def _cargar_comparacion(self):
@@ -217,10 +218,10 @@ class ResumenMensualView(QWidget):
                 emp.legajo or "",
                 f"{emp.nombre} {emp.apellido or ''}",
                 str(calc_q1["dias_trabajados"]),
-                f"$ {calc_q1['bruto']:,.2f}",
+                f"{moneda()} {calc_q1['bruto']:,.2f}",
                 str(calc_q2["dias_trabajados"]),
-                f"$ {calc_q2['bruto']:,.2f}",
-                f"$ {diff:,.2f}",
+                f"{moneda()} {calc_q2['bruto']:,.2f}",
+                f"{moneda()} {diff:,.2f}",
             ))
 
         self.tabla.setRowCount(len(filas))
@@ -236,8 +237,8 @@ class ResumenMensualView(QWidget):
 
         diff_total = total_q2 - total_q1
         self.lbl_totales.setText(
-            f"Q1: $ {total_q1:,.2f}  |  Q2: $ {total_q2:,.2f}  |  "
-            f"Diferencia: $ {diff_total:,.2f}  |  Empleados: {len(filas)}"
+            f"Q1: {moneda()} {total_q1:,.2f}  |  Q2: {moneda()} {total_q2:,.2f}  |  "
+            f"Diferencia: {moneda()} {diff_total:,.2f}  |  Empleados: {len(filas)}"
         )
 
     def _calcular_rango(self, empleado_id: int, desde: date, hasta: date) -> dict:

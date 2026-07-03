@@ -538,6 +538,49 @@ class ConfigGlobalView(QWidget):
 
         layout.addWidget(grp_info)
 
+        # --- Pais del Producto ---
+        grp_pais = QGroupBox("Pais del Producto")
+        grp_pais.setStyleSheet(GRP_STYLE)
+        pais_layout = QVBoxLayout(grp_pais)
+        pais_layout.setSpacing(8)
+
+        pais_hint = QLabel("Define moneda, impuestos y conceptos de nomina del sistema.")
+        pais_hint.setStyleSheet("font-size: 10px; color: #888; font-weight: normal;")
+        pais_layout.addWidget(pais_hint)
+
+        pais_row = QHBoxLayout()
+        pais_row.setSpacing(8)
+        lbl_pais_dev = QLabel("Pais:")
+        lbl_pais_dev.setStyleSheet("font-weight: normal; font-size: 11px; color: #aaa;")
+        pais_row.addWidget(lbl_pais_dev)
+        self._combo_pais_dev = QComboBox()
+        self._combo_pais_dev.setFixedHeight(28)
+        self._combo_pais_dev.setFixedWidth(180)
+        self._combo_pais_dev.addItems(["Venezuela", "Argentina"])
+        pais_actual = datos.get("cotizacion_pais", "Argentina")
+        idx_p = self._combo_pais_dev.findText(pais_actual)
+        if idx_p >= 0:
+            self._combo_pais_dev.setCurrentIndex(idx_p)
+        pais_row.addWidget(self._combo_pais_dev)
+
+        self._lbl_moneda_info = QLabel()
+        self._lbl_moneda_info.setStyleSheet("font-size: 10px; color: #D4AF37;")
+        self._actualizar_info_moneda()
+        self._combo_pais_dev.currentTextChanged.connect(self._actualizar_info_moneda)
+        pais_row.addWidget(self._lbl_moneda_info)
+        pais_row.addStretch()
+
+        btn_aplicar_pais = QPushButton("  Aplicar")
+        btn_aplicar_pais.setIcon(qta.icon("fa5s.globe", color="#10b981"))
+        btn_aplicar_pais.setFixedHeight(28)
+        btn_aplicar_pais.setFixedWidth(100)
+        btn_aplicar_pais.setCursor(Qt.PointingHandCursor)
+        btn_aplicar_pais.clicked.connect(self._aplicar_pais)
+        pais_row.addWidget(btn_aplicar_pais)
+        pais_layout.addLayout(pais_row)
+
+        layout.addWidget(grp_pais)
+
         # --- Contrasena de acceso ---
         grp_pwd = QGroupBox("Contrasena de Acceso al Panel")
         grp_pwd.setStyleSheet(GRP_STYLE)
@@ -638,6 +681,40 @@ class ConfigGlobalView(QWidget):
             self.lbl_dev_logo_path.setText(str(dest))
             pixmap = QPixmap(str(dest)).scaled(90, 90, Qt.KeepAspectRatio, Qt.SmoothTransformation)
             self.lbl_dev_logo_preview.setPixmap(pixmap)
+
+    def _actualizar_info_moneda(self, pais=None):
+        from services.core.pais_config_service import PAISES
+        pais = (pais or self._combo_pais_dev.currentText()).lower().strip()
+        config = PAISES.get(pais, {})
+        if config:
+            self._lbl_moneda_info.setText(
+                f"Moneda: {config['moneda_local']} / {config['moneda_extranjera']}  |  "
+                f"IVA: {config['iva']}%  |  ID Fiscal: {config['id_fiscal_empresa']}"
+            )
+
+    def _aplicar_pais(self):
+        pais = self._combo_pais_dev.currentText()
+        resp = QMessageBox.question(
+            self, "Aplicar Pais",
+            f"Se configurara el sistema para: {pais}\n\n"
+            f"Esto actualizara:\n"
+            f"- Moneda local y extranjera\n"
+            f"- Conceptos de nomina (se desactivan los del pais anterior)\n"
+            f"- IVA y formato fiscal\n\n"
+            f"Continuar?",
+            QMessageBox.Yes | QMessageBox.No,
+        )
+        if resp != QMessageBox.Yes:
+            return
+        try:
+            from services.core.pais_config_service import pais_config_service
+            pais_config_service.aplicar_pais(pais)
+            QMessageBox.information(self, "OK",
+                f"Sistema configurado para {pais}.\n"
+                f"Los conceptos de nomina fueron actualizados."
+            )
+        except Exception as e:
+            QMessageBox.critical(self, "Error", str(e))
 
     def _guardar_dev(self):
         datos = {clave: inp.text().strip() for clave, inp in self._dev_inputs.items()}

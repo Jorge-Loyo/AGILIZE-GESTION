@@ -32,50 +32,66 @@ class NominaService:
                 query = query.filter(Liquidacion.empleado_id == empleado_id)
             return query.order_by(Liquidacion.fecha_liquidacion.desc()).all()
 
-    def liquidar(self, empleado_id: int, periodo: str, sueldo_basico: Decimal, conceptos_ids: list[int]) -> Liquidacion:
+    def liquidar(self, empleado_id: int, periodo: str, sueldo_basico: Decimal,
+                  conceptos_ids: list[int], tasa_cambio: Decimal | None = None,
+                  asignaciones_manuales: dict | None = None) -> Liquidacion:
+        """Liquida un empleado.
+        asignaciones_manuales: dict {codigo_concepto: monto} para conceptos de monto variable
+                               ej: {'SAL_COMP': 63325.50, 'BONO_GUERRA': 8442.38}
+        """
         from services.rrhh.cierre_service import cierre_service
 
-        # Validar que no esté ya liquidado
         if cierre_service.liquidacion_cerrada(empleado_id, periodo):
             raise ValueError(f"El período {periodo} ya fue liquidado para este empleado.")
 
         with get_db() as db:
+            empleado = db.query(Empleado).filter(Empleado.id == empleado_id).first()
+            categoria = getattr(empleado, 'categoria_nomina', 'empleado') or 'empleado'
+
             conceptos = db.query(ConceptoNomina).filter(
                 ConceptoNomina.id.in_(conceptos_ids),
-                ConceptoNomina.activo == True,
-            ).all()
+                ConceptoNomina.activo.is_(True),
+            ).order_by(ConceptoNomina.orden).all()
+
+            # Filtrar por categoria del empleado
+            conceptos = [c for c in conceptos
+                         if c.aplica_a in ('todos', categoria, empleado.tipo_liquidacion)]
 
             total_haberes = sueldo_basico
             total_deducciones = Decimal("0")
             detalles = []
+            asignaciones = asignaciones_manuales or {}
 
             # Obtener dias trabajados para conceptos por_dia
             from services.rrhh.calculo_asistencia_service import calculo_asistencia_service
             calc_asist = calculo_asistencia_service.calcular_bruto_periodo(empleado_id, periodo)
             dias_trabajados = calc_asist["dias_trabajados"]
 
+            # Primera pasada: haberes (para calcular total_devengado)
             for c in conceptos:
-                if getattr(c, 'calculo', '') == "por_dia" and c.monto_fijo:
-                    monto = c.monto_fijo * Decimal(str(dias_trabajados))
-                elif c.porcentaje:
-                    monto = sueldo_basico * c.porcentaje / Decimal("100")
-                elif c.monto_fijo:
-                    monto = c.monto_fijo
-                else:
+                if c.tipo != "haber":
                     continue
-
+                monto = self._calcular_monto_concepto(
+                    c, sueldo_basico, Decimal("0"), dias_trabajados, asignaciones
+                )
+                if monto is None:
+                    continue
                 monto = monto.quantize(Decimal("0.01"))
+                total_haberes += monto
+                detalles.append(LiquidacionDetalle(concepto_id=c.id, tipo=c.tipo, monto=monto))
 
-                if c.tipo == "haber":
-                    total_haberes += monto
-                else:
-                    total_deducciones += monto
-
-                detalles.append(LiquidacionDetalle(
-                    concepto_id=c.id,
-                    tipo=c.tipo,
-                    monto=monto,
-                ))
+            # Segunda pasada: deducciones (ya conocemos total_devengado)
+            for c in conceptos:
+                if c.tipo != "deduccion":
+                    continue
+                monto = self._calcular_monto_concepto(
+                    c, sueldo_basico, total_haberes, dias_trabajados, asignaciones
+                )
+                if monto is None:
+                    continue
+                monto = monto.quantize(Decimal("0.01"))
+                total_deducciones += monto
+                detalles.append(LiquidacionDetalle(concepto_id=c.id, tipo=c.tipo, monto=monto))
 
             # Descontar adelantos pendientes
             from services.rrhh.adelanto_service import adelanto_service
@@ -93,6 +109,7 @@ class NominaService:
                 total_haberes=total_haberes,
                 total_deducciones=total_deducciones,
                 neto=neto,
+                tasa_cambio=tasa_cambio,
                 detalles=detalles,
             )
             db.add(liq)
@@ -103,14 +120,39 @@ class NominaService:
             from services.rrhh.sac_service import sac_service
             sac_service.registrar_mes(empleado_id, periodo, total_haberes)
 
-            # Cerrar liquidación del período
             cierre_service.cerrar_liquidacion(empleado_id, periodo)
 
-            # Auditoria
             from services.core.audit_service import registrar_auditoria
             registrar_auditoria("LIQUIDAR", "liquidaciones", liq.id, f"Periodo {periodo} - Neto: {neto}")
 
             return liq
+
+    def _calcular_monto_concepto(self, concepto: ConceptoNomina, salario_legal: Decimal,
+                                  total_devengado: Decimal, dias_trabajados: int,
+                                  asignaciones: dict) -> Decimal | None:
+        """Calcula el monto de un concepto segun su tipo de calculo y base."""
+        # Si hay asignacion manual para este concepto, usarla
+        if concepto.codigo in asignaciones:
+            val = asignaciones[concepto.codigo]
+            return Decimal(str(val)) if val else None
+
+        if concepto.calculo == "por_dia" and concepto.monto_fijo:
+            return concepto.monto_fijo * Decimal(str(dias_trabajados))
+
+        if concepto.calculo == "porcentaje" and concepto.porcentaje:
+            # Determinar base segun base_calculo
+            if concepto.base_calculo == "salario_legal":
+                base = salario_legal
+            elif concepto.base_calculo == "total_devengado":
+                base = total_devengado
+            else:  # basico, bruto
+                base = salario_legal
+            return base * concepto.porcentaje / Decimal("100")
+
+        if concepto.calculo == "fijo" and concepto.monto_fijo:
+            return concepto.monto_fijo if concepto.monto_fijo > 0 else None
+
+        return None
 
 
 nomina_service = NominaService()
@@ -146,8 +188,9 @@ class LiquidacionMasivaService:
                     calc = calculo_asistencia_service.calcular_bruto_periodo(emp.id, periodo)
                     basico = Decimal(str(calc.get("bruto", 0)))
 
-                # Filtrar conceptos que aplican a este tipo
-                conceptos_filtrados = self._filtrar_conceptos(conceptos_ids, emp.tipo_liquidacion)
+                # Filtrar conceptos que aplican a este tipo y categoria
+                categoria = getattr(emp, 'categoria_nomina', 'empleado') or 'empleado'
+                conceptos_filtrados = self._filtrar_conceptos(conceptos_ids, emp.tipo_liquidacion, categoria)
 
                 liq = nomina_service.liquidar(emp.id, periodo, basico, conceptos_filtrados)
                 total_neto += liq.neto
@@ -163,8 +206,8 @@ class LiquidacionMasivaService:
             "detalle_errores": errores,
         }
 
-    def _filtrar_conceptos(self, conceptos_ids: list, tipo_liquidacion: str) -> list:
-        """Filtra conceptos que aplican al tipo de liquidacion del empleado."""
+    def _filtrar_conceptos(self, conceptos_ids: list, tipo_liquidacion: str, categoria: str = "empleado") -> list:
+        """Filtra conceptos que aplican al tipo de liquidacion y categoria del empleado."""
         with get_db() as db:
             conceptos = db.query(ConceptoNomina).filter(
                 ConceptoNomina.id.in_(conceptos_ids),
@@ -172,7 +215,7 @@ class LiquidacionMasivaService:
             ).all()
             return [
                 c.id for c in conceptos
-                if c.aplica_a == "todos" or c.aplica_a == tipo_liquidacion
+                if c.aplica_a in ("todos", tipo_liquidacion, categoria)
             ]
 
     def generar_recibos_masivo(self, periodo: str) -> dict:

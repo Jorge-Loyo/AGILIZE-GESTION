@@ -15,10 +15,10 @@ class ConceptoNomina(Base, TimestampMixin):
     tipo: Mapped[str] = mapped_column(String(20))  # "haber" o "deduccion"
     categoria: Mapped[str] = mapped_column(String(30), default="remunerativo")  # remunerativo, no_remunerativo, retencion
     calculo: Mapped[str] = mapped_column(String(20), default="porcentaje")  # "porcentaje", "fijo", "por_dia"
-    base_calculo: Mapped[str] = mapped_column(String(20), default="basico")  # basico, bruto, neto
+    base_calculo: Mapped[str] = mapped_column(String(20), default="basico")  # basico, bruto, neto, salario_legal, total_devengado
     porcentaje: Mapped[Decimal | None] = mapped_column(Numeric(8, 4), nullable=True)
     monto_fijo: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
-    aplica_a: Mapped[str] = mapped_column(String(20), default="todos")  # todos, por_hora, mensual
+    aplica_a: Mapped[str] = mapped_column(String(20), default="todos")  # todos, por_hora, mensual, empleado, directivo
     orden: Mapped[int] = mapped_column(Integer, default=0)
     activo: Mapped[bool] = mapped_column(Boolean, default=True)
 
@@ -37,6 +37,7 @@ class Liquidacion(Base, TimestampMixin):
     total_haberes: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=0)
     total_deducciones: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=0)
     neto: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=0)
+    tasa_cambio: Mapped[Decimal | None] = mapped_column(Numeric(12, 4), nullable=True)  # Tasa BCV del periodo
     observaciones: Mapped[str] = mapped_column(Text, default="")
 
     empleado = relationship("Empleado")

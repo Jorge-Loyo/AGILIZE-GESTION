@@ -22,6 +22,15 @@ RECIBOS_DIR.mkdir(exist_ok=True)
 
 
 def generar_recibo_pdf(liquidacion_id: int) -> str:
+    """Genera el PDF del recibo. Detecta pais y usa formato correspondiente."""
+    pais = empresa_service.obtener("cotizacion_pais") or ""
+    if pais.lower() in ("venezuela", "ve"):
+        from services.rrhh.recibo_ve_service import generar_recibo_ve
+        return generar_recibo_ve(liquidacion_id)
+    return _generar_recibo_ar(liquidacion_id)
+
+
+def _generar_recibo_ar(liquidacion_id: int) -> str:
     """Genera el PDF del recibo con detalle completo."""
     with get_db() as db:
         liq = (

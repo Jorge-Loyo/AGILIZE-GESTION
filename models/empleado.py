@@ -73,6 +73,7 @@ class Empleado(Base, TimestampMixin):
     hora_entrada: Mapped[str] = mapped_column(String(5), default="08:00")
     hora_salida: Mapped[str] = mapped_column(String(5), default="17:00")
     tipo_liquidacion: Mapped[str] = mapped_column(String(20), default="por_hora")  # por_hora / mensual
+    categoria_nomina: Mapped[str] = mapped_column(String(20), default="empleado")  # empleado / directivo
     # Cuenta bancaria
     banco: Mapped[str] = mapped_column(String(100), default="")
     tipo_cuenta: Mapped[str] = mapped_column(String(30), default="")  # cta_ahorro, cta_corriente

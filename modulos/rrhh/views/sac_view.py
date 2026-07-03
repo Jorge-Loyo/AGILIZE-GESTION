@@ -6,6 +6,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt
 from datetime import date
 from services.rrhh.sac_service import sac_service
+from services.core.pais_config_service import moneda
 
 
 class SACView(QWidget):
@@ -148,7 +149,7 @@ class SACView(QWidget):
         self.tabla_acumulado.setRowCount(len(registros))
         for i, r in enumerate(registros):
             self.tabla_acumulado.setItem(i, 0, QTableWidgetItem(r.periodo))
-            self.tabla_acumulado.setItem(i, 1, QTableWidgetItem(f"$ {r.remuneracion_bruta:,.2f}"))
+            self.tabla_acumulado.setItem(i, 1, QTableWidgetItem(f"{moneda()} {r.remuneracion_bruta:,.2f}"))
 
         if registros:
             self.lbl_resultado.setText(f"{len(registros)} mes(es) registrado(s)")
@@ -174,9 +175,9 @@ class SACView(QWidget):
 
         metodo_txt = "Mayor remuneración" if metodo == "mayor" else "Promedio"
         self.lbl_resultado.setText(
-            f"Método: {metodo_txt} | Base: $ {resultado['base']:,.2f} | Meses: {resultado['meses']}/6"
+            f"Metodo: {metodo_txt} | Base: {moneda()} {resultado['base']:,.2f} | Meses: {resultado['meses']}/6"
         )
-        self.lbl_monto.setText(f"SAC: $ {resultado['monto_sac']:,.2f}")
+        self.lbl_monto.setText(f"SAC: {moneda()} {resultado['monto_sac']:,.2f}")
 
     def _liquidar(self):
         emp_id = self.combo_empleado.currentData()
@@ -195,7 +196,7 @@ class SACView(QWidget):
 
         resp = QMessageBox.question(
             self, "Confirmar",
-            f"¿Liquidar SAC por $ {resultado['monto_sac']:,.2f}?",
+            f"¿Liquidar SAC por {moneda()} {resultado['monto_sac']:,.2f}?",
             QMessageBox.Yes | QMessageBox.No,
         )
         if resp != QMessageBox.Yes:
@@ -218,4 +219,4 @@ class SACView(QWidget):
             self.tabla_historial.setItem(i, 1, QTableWidgetItem(str(liq.anio)))
             self.tabla_historial.setItem(i, 2, QTableWidgetItem(f"{liq.semestre}°"))
             self.tabla_historial.setItem(i, 3, QTableWidgetItem(metodo_txt))
-            self.tabla_historial.setItem(i, 4, QTableWidgetItem(f"$ {liq.monto_sac:,.2f}"))
+            self.tabla_historial.setItem(i, 4, QTableWidgetItem(f"{moneda()} {liq.monto_sac:,.2f}"))
