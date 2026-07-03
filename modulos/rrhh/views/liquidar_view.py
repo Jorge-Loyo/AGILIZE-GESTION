@@ -10,6 +10,7 @@ from datetime import date
 from services.rrhh.nomina_service import nomina_service
 from services.rrhh.empleado_service import empleado_service
 from services.rrhh.calculo_asistencia_service import calculo_asistencia_service
+from services.core.pais_config_service import moneda
 
 
 class LiquidarView(QWidget):
@@ -175,7 +176,7 @@ class LiquidarView(QWidget):
             if c.porcentaje:
                 label += f" ({c.porcentaje}%)"
             elif c.monto_fijo:
-                label += f" (${c.monto_fijo})"
+                label += f" ({moneda()}{c.monto_fijo})"
             chk = QCheckBox(label)
             chk.setChecked(False)
             chk.stateChanged.connect(self._recalcular)

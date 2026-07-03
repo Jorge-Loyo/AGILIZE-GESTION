@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, Signal, QDate, QTime
 from PySide6.QtGui import QIntValidator
 from services.rrhh.empleado_service import empleado_service
+from services.core.pais_config_service import label_doc_identidad, label_id_fiscal
 from decimal import Decimal
 
 
@@ -64,19 +65,21 @@ class FormEmpleado(QWidget):
         self.input_apellido.setMinimumHeight(32)
         form1.addWidget(self.input_apellido, 0, 3)
 
-        form1.addWidget(QLabel("DNI *"), 1, 0)
+        self._lbl_dni = label_doc_identidad()
+        self._lbl_cuil = label_id_fiscal()
+
+        form1.addWidget(QLabel(f"{self._lbl_dni} *"), 1, 0)
         self.input_dni = QLineEdit()
         self.input_dni.setMinimumHeight(32)
         self.input_dni.setPlaceholderText("7-9 dígitos")
-        self.input_dni.setValidator(QIntValidator(1000000, 999999999))
-        self.input_dni.setMaxLength(9)
+        self.input_dni.setMaxLength(15)
         form1.addWidget(self.input_dni, 1, 1)
 
-        form1.addWidget(QLabel("CUIL *"), 1, 2)
+        form1.addWidget(QLabel(f"{self._lbl_cuil} *"), 1, 2)
         self.input_cuil = QLineEdit()
         self.input_cuil.setMinimumHeight(32)
-        self.input_cuil.setPlaceholderText("XX-XXXXXXXX-X")
-        self.input_cuil.setMaxLength(13)
+        self.input_cuil.setPlaceholderText("Identificación fiscal")
+        self.input_cuil.setMaxLength(20)
         form1.addWidget(self.input_cuil, 1, 3)
 
         form1.addWidget(QLabel("Email"), 2, 0)
@@ -289,18 +292,13 @@ class FormEmpleado(QWidget):
         if not apellido:
             return "El apellido es obligatorio."
 
-        # DNI: 7 a 9 dígitos
         if not dni:
-            return "El DNI es obligatorio."
-        if not dni.isdigit() or len(dni) < 7 or len(dni) > 9:
-            return "El DNI debe tener entre 7 y 9 dígitos numéricos."
+            return f"El {self._lbl_dni} es obligatorio."
+        if len(dni) < 5:
+            return f"El {self._lbl_dni} debe tener al menos 5 caracteres."
 
-        # CUIL: formato XX-XXXXXXXX-X
         if not cuil:
-            return "El CUIL es obligatorio."
-        cuil_pattern = r"^\d{2}-\d{7,8}-\d{1}$"
-        if not re.match(cuil_pattern, cuil):
-            return "El CUIL debe tener formato XX-XXXXXXXX-X (ej: 20-12345678-9)."
+            return f"El {self._lbl_cuil} es obligatorio."
 
         # Email (si se ingresó)
         if email:
@@ -383,6 +381,14 @@ class FormEmpleado(QWidget):
         self.combo_cargo.addItem("— Sin asignar —", None)
         for c in self._cargos:
             self.combo_cargo.addItem(c.nombre, c.id)
+        # Sucursales
+        from core.database import get_db
+        from models.sucursal import Sucursal
+        self.combo_sucursal.addItem("— Sin asignar —", None)
+        with get_db() as db:
+            sucursales = db.query(Sucursal).filter(Sucursal.activo == True).order_by(Sucursal.nombre).all()
+            for s in sucursales:
+                self.combo_sucursal.addItem(s.nombre, s.id)
 
     def _cargar_datos(self):
         emp = empleado_service.obtener(self._empleado_id)

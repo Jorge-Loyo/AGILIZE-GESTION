@@ -11,6 +11,7 @@ from modulos.rrhh.views.detalle_empleado_dialog import EmpleadoDetalleDialog
 from services.rrhh.empleado_service import empleado_service
 from services.herramientas.export_service import exportar_excel
 from services.herramientas.import_service import importar_empleados, generar_plantilla
+from services.core.pais_config_service import label_doc_identidad, label_id_fiscal
 import os
 
 
@@ -33,7 +34,7 @@ class EmpleadosView(QWidget):
         lista_layout.setContentsMargins(0, 0, 0, 0)
         lista_layout.setSpacing(8)
 
-        self.tabla = DataTable(["Legajo", "Apellido", "Nombre", "DNI", "CUIL", "Departamento", "Cargo", "Estado"])
+        self.tabla = DataTable(["Legajo", "Apellido", "Nombre", label_doc_identidad(), label_id_fiscal(), "Departamento", "Cargo", "Estado"])
         self.tabla.btn_buscar.clicked.connect(self._cargar_lista)
         self.tabla.input_busqueda.returnPressed.connect(self._cargar_lista)
         self.tabla.btn_nuevo.clicked.connect(self._nuevo)
@@ -216,7 +217,7 @@ class EmpleadosView(QWidget):
             wb = Workbook()
             header_font = Font(bold=True, color="FFFFFF")
             header_fill = PatternFill(start_color="D4AF37", end_color="D4AF37", fill_type="solid")
-            headers = ["Legajo", "Apellido", "Nombre", "DNI", "CUIL", "Email", "Telefono",
+            headers = ["Legajo", "Apellido", "Nombre", label_doc_identidad(), label_id_fiscal(), "Email", "Telefono",
                        "Departamento", "Cargo", "Valor Hora", "Sueldo Mensual", "Tipo Liquidacion"]
 
             # Hoja Activos
@@ -334,8 +335,8 @@ class EmpleadosView(QWidget):
         clayout.addWidget(self._info_section("Columnas Opcionales", [
             ("Legajo", "Codigo unico. Si es un numero se formatea como EMP-0001. Se genera si no se pone"),
             ("Apellido", "Si no se pone, se separa del Nombre automaticamente"),
-            ("DNI", "7 a 9 digitos sin puntos. Opcional"),
-            ("CUIL", "Formato XX-XXXXXXXX-X. Opcional"),
+            ("DNI / Cédula", "Documento de identidad. Opcional"),
+            ("CUIL / RIF", "Identificación fiscal. Opcional"),
             ("Email", "Formato email valido"),
             ("Telefono", "Numeros"),
             ("Direccion", "Texto libre"),

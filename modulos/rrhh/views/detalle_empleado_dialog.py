@@ -5,6 +5,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, Signal
 from services.rrhh.empleado_service import empleado_service
+from services.core.pais_config_service import label_doc_identidad, label_id_fiscal, moneda
 
 
 class EmpleadoDetalleDialog(QDialog):
@@ -50,8 +51,8 @@ class EmpleadoDetalleDialog(QDialog):
 
         row = 0
         datos = [
-            ("DNI", emp.dni),
-            ("CUIL", emp.cuil),
+            (label_doc_identidad(), emp.dni),
+            (label_id_fiscal(), emp.cuil),
             ("Email", emp.email or "—"),
             ("Teléfono", emp.telefono or "—"),
             ("Dirección", emp.direccion or "—"),
@@ -63,8 +64,8 @@ class EmpleadoDetalleDialog(QDialog):
             ("Jornada", f"{emp.horas_jornada} hs/día" if emp.horas_jornada else "—"),
             ("Horario", f"{emp.hora_entrada} a {emp.hora_salida}" if emp.hora_entrada else "—"),
             ("Días", (emp.dias_laborales or "").replace(",", ", ").upper()),
-            ("Valor Hora", f"$ {emp.valor_hora:,.2f}" if emp.valor_hora else "—"),
-            ("Sueldo Mensual", f"$ {emp.sueldo_mensual:,.2f}" if emp.sueldo_mensual else "—"),
+            ("Valor Hora", f"{moneda()} {emp.valor_hora:,.2f}" if emp.valor_hora else "—"),
+            ("Sueldo Mensual", f"{moneda()} {emp.sueldo_mensual:,.2f}" if emp.sueldo_mensual else "—"),
         ]
 
         col = 0

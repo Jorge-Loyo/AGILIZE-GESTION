@@ -7,6 +7,7 @@ from decimal import Decimal
 from services.core.dashboard_service import dashboard_service
 from services.rrhh.calculo_asistencia_service import calculo_asistencia_service
 from services.rrhh.empleado_service import empleado_service
+from services.core.pais_config_service import moneda
 
 
 class DashboardRRHHView(QWidget):
@@ -70,39 +71,39 @@ class DashboardRRHHView(QWidget):
         self.card_pendientes = self._create_card("0", "Pendientes Liquidar", "#ef4444")
         self.grid.addWidget(self.card_pendientes, 1, 0)
 
-        self.card_adelantos = self._create_card("$ 0", "Adelantos Pendientes", "#ec4899")
+        self.card_adelantos = self._create_card(f"{moneda()} 0", "Adelantos Pendientes", "#ec4899")
         self.grid.addWidget(self.card_adelantos, 1, 1)
 
         self.card_cierre = self._create_card("---", "Estado Asistencia", "#8b5cf6")
         self.grid.addWidget(self.card_cierre, 1, 2)
 
-        self.card_gasto = self._create_card("$ 0", "Gasto Nomina", "#f97316")
+        self.card_gasto = self._create_card(f"{moneda()} 0", "Gasto Nomina", "#f97316")
         self.grid.addWidget(self.card_gasto, 1, 3)
 
         layout.addLayout(self.grid)
 
         # === METRICAS GLOBALES ===
-        lbl_sec2 = QLabel("Metricas Globales")
+        lbl_sec2 = QLabel("Métricas Globales")
         lbl_sec2.setStyleSheet("font-size: 13px; font-weight: bold; color: #D4AF37; margin-top: 8px;")
         layout.addWidget(lbl_sec2)
 
         self.grid_global = QHBoxLayout()
         self.grid_global.setSpacing(12)
 
-        self.gcard_empleados = self._create_mini_card("0", "Total Empleados")
-        self.grid_global.addWidget(self.gcard_empleados)
+        self.gcard_plantel = self._create_mini_card("0 / 0", "Activos / Inactivos")
+        self.grid_global.addWidget(self.gcard_plantel)
 
-        self.gcard_inactivos = self._create_mini_card("0", "Inactivos")
-        self.grid_global.addWidget(self.gcard_inactivos)
+        self.gcard_gasto_acum = self._create_mini_card(f"{moneda()} 0", "Nómina Acumulada")
+        self.grid_global.addWidget(self.gcard_gasto_acum)
 
-        self.gcard_liquidaciones = self._create_mini_card("0", "Liquidaciones Totales")
-        self.grid_global.addWidget(self.gcard_liquidaciones)
+        self.gcard_adelantos = self._create_mini_card("0", "Adelantos Activos")
+        self.grid_global.addWidget(self.gcard_adelantos)
 
-        self.gcard_horas = self._create_mini_card("0", "Hs Totales Registradas")
-        self.grid_global.addWidget(self.gcard_horas)
+        self.gcard_vacaciones = self._create_mini_card("0", "Vacaciones Pendientes")
+        self.grid_global.addWidget(self.gcard_vacaciones)
 
-        self.gcard_cierres = self._create_mini_card("0", "Periodos Cerrados")
-        self.grid_global.addWidget(self.gcard_cierres)
+        self.gcard_antiguedad = self._create_mini_card("0 meses", "Antigüedad Promedio")
+        self.grid_global.addWidget(self.gcard_antiguedad)
 
         layout.addLayout(self.grid_global)
 
@@ -188,7 +189,7 @@ class DashboardRRHHView(QWidget):
         self._update_card(self.card_extras, f"{m['horas_extra_mes']} hs")
         self._update_card(self.card_liquidadas, str(m["liquidaciones_mes"]))
         self._update_card(self.card_pendientes, str(m["pendientes_liquidar"]))
-        self._update_card(self.card_adelantos, f"$ {m['adelantos_pendientes']:,.2f}")
+        self._update_card(self.card_adelantos, f"{moneda()} {m['adelantos_pendientes']:,.2f}")
         estado_cierre = "CERRADA" if m["asistencia_cerrada"] else "ABIERTA"
         self._update_card(self.card_cierre, estado_cierre)
 
@@ -198,16 +199,19 @@ class DashboardRRHHView(QWidget):
         for emp in empleados:
             calc = calculo_asistencia_service.calcular_bruto_periodo(emp.id, m["periodo_actual"])
             gasto_total += calc["bruto"]
-        self._update_card(self.card_gasto, f"$ {gasto_total:,.2f}")
+        self._update_card(self.card_gasto, f"{moneda()} {gasto_total:,.2f}")
 
         # Metricas globales
         g = dashboard_service.obtener_metricas_globales()
-        self._update_card(self.gcard_empleados, str(g["total_empleados"]))
-        self._update_card(self.gcard_inactivos, str(g["total_inactivos"]))
-        self._update_card(self.gcard_liquidaciones, str(g["total_liquidaciones"]))
-        total_hs = float(g["total_horas_normales"]) + float(g["total_horas_extra"])
-        self._update_card(self.gcard_horas, f"{total_hs:.0f} hs")
-        self._update_card(self.gcard_cierres, str(g["periodos_cerrados"]))
+        self._update_card(self.gcard_plantel, f"{g['total_activos']} / {g['total_inactivos']}")
+        self._update_card(self.gcard_gasto_acum, f"{moneda()} {g['gasto_acumulado']:,.2f}")
+        self._update_card(self.gcard_adelantos, str(g["adelantos_activos"]))
+        self._update_card(self.gcard_vacaciones, str(g["vacaciones_pendientes"]))
+        meses = g["antiguedad_promedio_meses"]
+        if meses >= 12:
+            self._update_card(self.gcard_antiguedad, f"{meses/12:.1f} años")
+        else:
+            self._update_card(self.gcard_antiguedad, f"{meses:.0f} meses")
 
         # Notificaciones
         self._cargar_notificaciones(m)

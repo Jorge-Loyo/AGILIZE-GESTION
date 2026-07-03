@@ -64,6 +64,18 @@ def moneda_ext() -> str:
     return PAISES.get(pais, PAISES["argentina"])["simbolo_extranjero"]
 
 
+def label_doc_identidad() -> str:
+    """Retorna 'DNI' o 'Cédula' segun pais."""
+    pais = (empresa_service.obtener("cotizacion_pais") or "argentina").lower().strip()
+    return PAISES.get(pais, PAISES["argentina"])["id_fiscal_persona"]
+
+
+def label_id_fiscal() -> str:
+    """Retorna 'CUIL' o 'RIF' segun pais."""
+    pais = (empresa_service.obtener("cotizacion_pais") or "argentina").lower().strip()
+    return PAISES.get(pais, PAISES["argentina"])["id_fiscal_label"]
+
+
 class PaisConfigService:
     """Servicio que retorna configuracion segun el pais seleccionado."""
 
