@@ -3,6 +3,7 @@ from pathlib import Path
 from datetime import date
 from core.config import BASE_DIR
 from services.core.empresa_service import empresa_service
+from services.core.pais_config_service import label_doc_identidad, label_id_fiscal
 
 
 def generar_formulario_alta() -> str:
@@ -11,6 +12,7 @@ def generar_formulario_alta() -> str:
     from reportlab.lib.units import cm, mm
     from reportlab.pdfgen import canvas
     from reportlab.lib.colors import HexColor
+    from services.core.logo_service import get_empresa_logo_path, get_app_icon_path
 
     output_dir = BASE_DIR / "exports"
     output_dir.mkdir(exist_ok=True)
@@ -23,27 +25,56 @@ def generar_formulario_alta() -> str:
     gris = HexColor("#666666")
     negro = HexColor("#000000")
 
-    # === HEADER ===
     datos = empresa_service.obtener_todos()
     empresa = datos.get("razon_social", datos.get("nombre_app", "Empresa"))
+    nombre_app = datos.get("nombre_app", "Agilize Gestion")
+    pais = (datos.get("cotizacion_pais", "Venezuela")).lower().strip()
+    lbl_doc = label_doc_identidad()
+    lbl_fiscal = label_id_fiscal()
+
+    # === HEADER con logos ===
+    # Logo empresa (izquierda)
+    logo_empresa = get_empresa_logo_path()
+    if logo_empresa and Path(logo_empresa).exists():
+        try:
+            c.drawImage(logo_empresa, margen, h - 3.2 * cm, width=1.8 * cm, height=1.8 * cm, preserveAspectRatio=True, mask='auto')
+        except Exception:
+            pass
+
+    # Logo app (derecha, mas grande)
+    logo_app = get_app_icon_path()
+    if logo_app and Path(logo_app).exists():
+        try:
+            c.drawImage(logo_app, w - margen - 2.2 * cm, h - 3.4 * cm, width=2.0 * cm, height=2.0 * cm, preserveAspectRatio=True, mask='auto')
+        except Exception:
+            pass
 
     # Linea dorada superior
     c.setStrokeColor(gold)
     c.setLineWidth(3)
-    c.line(margen, h - 1.5 * cm, w - margen, h - 1.5 * cm)
+    c.line(margen, h - 1.2 * cm, w - margen, h - 1.2 * cm)
 
+    # Nombre empresa centrado: "Agilize" en dorado, "Gestion" en negro
+    c.setFont("Helvetica-Bold", 16)
+    texto_agilize = "Agilize"
+    texto_gestion = " Gestion"
+    ancho_agilize = c.stringWidth(texto_agilize, "Helvetica-Bold", 16)
+    ancho_gestion = c.stringWidth(texto_gestion, "Helvetica-Bold", 16)
+    ancho_total = ancho_agilize + ancho_gestion
+    x_inicio = (w - ancho_total) / 2
+    c.setFillColor(gold)
+    c.drawString(x_inicio, h - 2.2 * cm, texto_agilize)
     c.setFillColor(negro)
-    c.setFont("Helvetica-Bold", 18)
-    c.drawString(margen, h - 2.5 * cm, empresa)
+    c.drawString(x_inicio + ancho_agilize, h - 2.2 * cm, texto_gestion)
 
     c.setFillColor(gris)
     c.setFont("Helvetica", 10)
-    c.drawString(margen, h - 3.1 * cm, "Formulario de Alta de Empleado")
+    c.drawCentredString(w / 2, h - 2.8 * cm, "Formulario de Alta de Empleado")
 
     c.setFont("Helvetica", 9)
-    c.drawRightString(w - margen, h - 2.5 * cm, f"Fecha: ____/____/________")
+    c.drawRightString(w - margen, h - 3.5 * cm, "Fecha: ____/____/________")
 
-    y = h - 4.2 * cm
+    y = h - 4.5 * cm
 
     # === HELPERS ===
     def seccion(titulo):
@@ -108,11 +139,15 @@ def generar_formulario_alta() -> str:
     # === DATOS PERSONALES ===
     seccion("Datos Personales")
     campo_doble("Apellido", "Nombre")
-    campo_triple("DNI", "CUIL", "Fecha de Nacimiento")
+    campo_triple(lbl_doc, lbl_fiscal, "Fecha Nac.")
     campo("Domicilio")
-    campo_triple("Localidad", "Provincia", "Codigo Postal")
+    if pais == "venezuela":
+        campo_triple("Ciudad", "Estado", "Codigo Postal")
+    else:
+        campo_triple("Localidad", "Provincia", "Codigo Postal")
     campo_doble("Telefono", "Email")
-    campo_doble("Estado Civil", "Contacto de Emergencia (nombre y tel.)")
+    campo("Estado Civil")
+    campo("Contacto de Emergencia (nombre y telefono)")
 
     # === DATOS LABORALES ===
     seccion("Datos Laborales")
@@ -142,13 +177,25 @@ def generar_formulario_alta() -> str:
     y -= 0.1 * cm
     c.setFont("Helvetica", 9)
     c.setFillColor(gris)
-    docs = [
-        "Fotocopia DNI (frente y dorso)",
-        "Constancia CUIL",
-        "Certificado domicilio",
-        "Certificado de estudios",
-        "Aptitud fisica (apto medico)",
-    ]
+
+    if pais == "venezuela":
+        docs = [
+            f"Fotocopia {lbl_doc} (frente y dorso)",
+            f"Copia del {lbl_fiscal}",
+            "Constancia de residencia",
+            "Certificado de salud",
+            "Foto tipo carnet",
+            "Cuenta bancaria (numero y banco)",
+        ]
+    else:
+        docs = [
+            "Fotocopia DNI (frente y dorso)",
+            "Constancia CUIL",
+            "Certificado domicilio",
+            "Certificado de estudios",
+            "Aptitud fisica (apto medico)",
+        ]
+
     for doc in docs:
         c.rect(margen + 0.1 * cm, y - 0.05 * cm, 0.3 * cm, 0.3 * cm)
         c.drawString(margen + 0.7 * cm, y + 0.02 * cm, doc)
@@ -163,7 +210,7 @@ def generar_formulario_alta() -> str:
         y -= 0.65 * cm
 
     # === FIRMAS ===
-    y -= 1.2 * cm
+    y -= 0.8 * cm
     c.setStrokeColor(negro)
     c.setLineWidth(0.8)
     c.line(margen, y, margen + 6 * cm, y)
@@ -174,12 +221,9 @@ def generar_formulario_alta() -> str:
     c.drawString(w - margen - 6 * cm, y - 0.4 * cm, "Firma del Responsable")
 
     # === FOOTER ===
-    c.setStrokeColor(gold)
-    c.setLineWidth(1)
-    c.line(margen, 1.5 * cm, w - margen, 1.5 * cm)
     c.setFont("Helvetica", 7)
     c.setFillColor(gris)
-    c.drawCentredString(w / 2, 0.9 * cm, f"{datos.get('nombre_app', 'Agilize Gestion')} — Generado el {date.today().strftime('%d/%m/%Y')}")
+    c.drawCentredString(w / 2, 0.7 * cm, f"{nombre_app} — Generado el {date.today().strftime('%d/%m/%Y')}")
 
     c.save()
     return filepath

@@ -95,9 +95,9 @@ class RRHHView(QWidget):
 
         # Boton salir
         btn_logout = QPushButton("  Cerrar sesion")
-        btn_logout.setIcon(qta.icon("fa5s.sign-out-alt", color="#ffffff"))
+        btn_logout.setIcon(qta.icon("fa5s.sign-out-alt", color="#000000"))
         btn_logout.setCursor(Qt.PointingHandCursor)
-        btn_logout.setStyleSheet("QPushButton { background-color: #ef4444; } QPushButton:hover { background-color: #dc2626; }")
+        btn_logout.setStyleSheet("QPushButton { background-color: #ef4444; color: #000000; } QPushButton:hover { background-color: #dc2626; }")
         btn_logout.clicked.connect(self.logout_signal.emit)
         sidebar_layout.addWidget(btn_logout)
 

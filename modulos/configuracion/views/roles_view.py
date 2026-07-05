@@ -22,8 +22,8 @@ class RolesView(QWidget):
 
     def _build_ui(self):
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(32, 32, 32, 32)
-        layout.setSpacing(16)
+        layout.setContentsMargins(24, 24, 24, 24)
+        layout.setSpacing(12)
 
         title = QLabel("Administracion de Roles")
         title.setObjectName("title")
@@ -110,17 +110,20 @@ class RolesView(QWidget):
             permisos_activos = set(rp.permiso_id for rp in rol_perms)
 
             # Header
-            self.permisos_layout.addWidget(QLabel("Modulo"), 0, 0)
+            lbl_header = QLabel("Modulo")
+            lbl_header.setStyleSheet("font-weight: bold; font-size: 12px; color: #D4AF37; padding: 4px;")
+            self.permisos_layout.addWidget(lbl_header, 0, 0)
             for j, accion in enumerate(ACCIONES):
                 lbl = QLabel(accion.capitalize())
                 lbl.setAlignment(Qt.AlignCenter)
-                lbl.setStyleSheet("font-weight: bold; font-size: 11px;")
+                lbl.setStyleSheet("font-weight: bold; font-size: 11px; color: #D4AF37; padding: 4px;")
                 self.permisos_layout.addWidget(lbl, 0, j + 1)
 
             # Filas por modulo
             for i, modulo in enumerate(modulos):
-                lbl_mod = QLabel(modulo.nombre)
-                lbl_mod.setStyleSheet("font-size: 13px;")
+                lbl_mod = QLabel(f"  {modulo.nombre}")
+                lbl_mod.setStyleSheet("font-size: 12px; padding: 2px 4px;")
+                lbl_mod.setMinimumHeight(28)
                 self.permisos_layout.addWidget(lbl_mod, i + 1, 0)
 
                 for j, accion in enumerate(ACCIONES):

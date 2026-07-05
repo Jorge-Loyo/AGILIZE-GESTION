@@ -3,6 +3,7 @@ from PySide6.QtWidgets import (
     QComboBox, QLineEdit, QPushButton, QLabel,
     QMessageBox, QGroupBox, QCheckBox, QScrollArea, QFrame,
     QDoubleSpinBox, QTableWidget, QTableWidgetItem, QHeaderView,
+    QSpinBox,
 )
 from PySide6.QtCore import Qt, Signal
 from decimal import Decimal
@@ -10,6 +11,7 @@ from datetime import date
 from services.rrhh.nomina_service import nomina_service
 from services.rrhh.empleado_service import empleado_service
 from services.rrhh.calculo_asistencia_service import calculo_asistencia_service
+from services.rrhh.nomina_ve_service import nomina_ve_service
 from services.core.pais_config_service import moneda
 
 
@@ -123,19 +125,63 @@ class LiquidarView(QWidget):
 
         totales_layout = QHBoxLayout()
         totales_layout.setSpacing(16)
-        self.lbl_haberes = QLabel("Haberes: $ 0.00")
+        self.lbl_haberes = QLabel("Haberes: 0.00")
         self.lbl_haberes.setStyleSheet("font-weight: bold; color: #10b981; font-size: 13px;")
         totales_layout.addWidget(self.lbl_haberes)
-        self.lbl_deducciones = QLabel("Deducciones: $ 0.00")
+        self.lbl_deducciones = QLabel("Deducciones: 0.00")
         self.lbl_deducciones.setStyleSheet("font-weight: bold; color: #ef4444; font-size: 13px;")
         totales_layout.addWidget(self.lbl_deducciones)
         totales_layout.addStretch()
-        self.lbl_neto = QLabel("NETO: $ 0.00")
+        self.lbl_neto = QLabel("NETO: 0.00")
         self.lbl_neto.setStyleSheet("font-size: 18px; font-weight: bold; color: #D4AF37;")
         totales_layout.addWidget(self.lbl_neto)
         preview_layout.addLayout(totales_layout)
 
         clayout.addWidget(grp_preview)
+        scroll.setWidget(content)
+        layout.addWidget(scroll)
+
+        # === Panel Dual USD (oculto por defecto) ===
+        self.grp_dual = self._grp("Liquidación Dual (USD)")
+        dual_layout = QGridLayout(self.grp_dual)
+        dual_layout.setSpacing(8)
+        dual_layout.setColumnStretch(1, 1)
+        dual_layout.setColumnStretch(3, 1)
+
+        dual_layout.addWidget(QLabel("Tasa BCV:"), 0, 0)
+        self.combo_tasa = QComboBox()
+        self.combo_tasa.setMinimumHeight(32)
+        self.combo_tasa.currentIndexChanged.connect(self._recalcular_dual)
+        dual_layout.addWidget(self.combo_tasa, 0, 1)
+
+        dual_layout.addWidget(QLabel("Faltas:"), 0, 2)
+        self.spin_faltas = QSpinBox()
+        self.spin_faltas.setMinimumHeight(32)
+        self.spin_faltas.setRange(0, 30)
+        self.spin_faltas.valueChanged.connect(self._recalcular_dual)
+        dual_layout.addWidget(self.spin_faltas, 0, 3)
+
+        dual_layout.addWidget(QLabel("Bono USD:"), 1, 0)
+        self.spin_bono = QDoubleSpinBox()
+        self.spin_bono.setMinimumHeight(32)
+        self.spin_bono.setRange(0, 99999)
+        self.spin_bono.setDecimals(2)
+        self.spin_bono.setPrefix("$ ")
+        self.spin_bono.valueChanged.connect(self._recalcular_dual)
+        dual_layout.addWidget(self.spin_bono, 1, 1)
+
+        self.lbl_dual_preview = QLabel("")
+        self.lbl_dual_preview.setStyleSheet("font-size: 12px; padding: 4px;")
+        dual_layout.addWidget(self.lbl_dual_preview, 1, 2, 1, 2)
+
+        # Totales dual
+        self.lbl_dual_neto = QLabel("NETO USD: $ 0.00")
+        self.lbl_dual_neto.setStyleSheet("font-size: 18px; font-weight: bold; color: #10b981;")
+        dual_layout.addWidget(self.lbl_dual_neto, 2, 0, 1, 4)
+
+        self.grp_dual.setVisible(False)
+        clayout.addWidget(self.grp_dual)
+
         scroll.setWidget(content)
         layout.addWidget(scroll)
 
@@ -239,18 +285,20 @@ class LiquidarView(QWidget):
         self._calculo = calc
 
         if calc.get('tipo_liquidacion') == 'mensual':
-            self.lbl_hs_normales.setText(f"Sueldo: $ {calc['sueldo_mensual']:,.2f} | Faltas: {calc['faltas']}")
-            self.lbl_hs_extra.setText(f"Desc faltas: $ {calc['descuento_faltas']:,.2f}")
-            self.lbl_hs_sabado.setText(f"Hs Extra: {calc['hs_extra']} x{calc['mult_extra']} = $ {calc['monto_extra']:,.2f}" if calc['hs_extra'] > 0 else "")
-            self.lbl_hs_domingo.setText(f"Fer.trab: {calc['hs_feriado']} hs x{calc['mult_feriado']} = $ {calc['monto_feriado']:,.2f}" if calc['hs_feriado'] > 0 else "")
+            _m = moneda()
+            self.lbl_hs_normales.setText(f"Sueldo: {_m} {calc['sueldo_mensual']:,.2f} | Faltas: {calc['faltas']}")
+            self.lbl_hs_extra.setText(f"Desc faltas: {_m} {calc['descuento_faltas']:,.2f}")
+            self.lbl_hs_sabado.setText(f"Hs Extra: {calc['hs_extra']} x{calc['mult_extra']} = {_m} {calc['monto_extra']:,.2f}" if calc['hs_extra'] > 0 else "")
+            self.lbl_hs_domingo.setText(f"Fer.trab: {calc['hs_feriado']} hs x{calc['mult_feriado']} = {_m} {calc['monto_feriado']:,.2f}" if calc['hs_feriado'] > 0 else "")
             self.lbl_hs_feriado.setText(f"Dias: {calc['dias_trabajados']}")
             self.lbl_valor_hora.setText("MENSUAL")
         else:
-            self.lbl_hs_normales.setText(f"Normal: {calc['hs_normales']} hs = $ {calc['monto_normales']:,.2f}")
-            self.lbl_hs_extra.setText(f"Extra: {calc['hs_extra']} hs x{calc['mult_extra']} = $ {calc['monto_extra']:,.2f}")
-            self.lbl_hs_sabado.setText(f"Sab: {calc['hs_sabado']} hs x{calc['mult_sabado']} = $ {calc['monto_sabado']:,.2f}")
-            self.lbl_hs_domingo.setText(f"Dom: {calc['hs_domingo']} hs x{calc['mult_domingo']} = $ {calc['monto_domingo']:,.2f}")
-            self.lbl_hs_feriado.setText(f"Fer.trab: {calc['hs_feriado']} hs x{calc['mult_feriado']} = $ {calc['monto_feriado']:,.2f}")
+            _m = moneda()
+            self.lbl_hs_normales.setText(f"Normal: {calc['hs_normales']} hs = {_m} {calc['monto_normales']:,.2f}")
+            self.lbl_hs_extra.setText(f"Extra: {calc['hs_extra']} hs x{calc['mult_extra']} = {_m} {calc['monto_extra']:,.2f}")
+            self.lbl_hs_sabado.setText(f"Sab: {calc['hs_sabado']} hs x{calc['mult_sabado']} = {_m} {calc['monto_sabado']:,.2f}")
+            self.lbl_hs_domingo.setText(f"Dom: {calc['hs_domingo']} hs x{calc['mult_domingo']} = {_m} {calc['monto_domingo']:,.2f}")
+            self.lbl_hs_feriado.setText(f"Fer.trab: {calc['hs_feriado']} hs x{calc['mult_feriado']} = {_m} {calc['monto_feriado']:,.2f}")
             self.lbl_valor_hora.setText(f"$/h: {calc['valor_hora']:,.0f}")
 
         # Feriados no trabajados - AMBOS tipos de empleado
@@ -284,7 +332,7 @@ class LiquidarView(QWidget):
                 _vh = (_sd / _jornada).quantize(Decimal('0.01'))
             bruto += (_hs_fer * _vh * _mult_nt).quantize(Decimal('0.01'))
 
-        self.lbl_bruto.setText(f"BRUTO: $ {bruto:,.2f} ({calc['dias_trabajados']} dias)")
+        self.lbl_bruto.setText(f"BRUTO: {moneda()} {bruto:,.2f} ({calc['dias_trabajados']} dias)")
         self._calculo['bruto'] = bruto
 
         # Calcular recibo
@@ -302,9 +350,9 @@ class LiquidarView(QWidget):
         basico = basico_original
         if basico <= 0:
             self.tabla_detalle.setRowCount(0)
-            self.lbl_haberes.setText("Haberes: $ 0.00")
-            self.lbl_deducciones.setText("Deducciones: $ 0.00")
-            self.lbl_neto.setText("NETO: $ 0.00")
+            self.lbl_haberes.setText("Haberes: 0.00")
+            self.lbl_deducciones.setText("Deducciones: 0.00")
+            self.lbl_neto.setText("NETO: 0.00")
             return
 
         conceptos_ids = [cid for chk, cid in self._conceptos_checks if chk.isChecked()]
@@ -357,18 +405,82 @@ class LiquidarView(QWidget):
         for i, (nombre, tipo, monto) in enumerate(filas):
             self.tabla_detalle.setItem(i, 0, QTableWidgetItem(nombre))
             self.tabla_detalle.setItem(i, 1, QTableWidgetItem(tipo))
-            self.tabla_detalle.setItem(i, 2, QTableWidgetItem(f"$ {monto:,.2f}"))
+            self.tabla_detalle.setItem(i, 2, QTableWidgetItem(f"{_m} {monto:,.2f}"))
 
-        self.lbl_haberes.setText(f"Haberes: $ {total_haberes:,.2f}")
-        self.lbl_deducciones.setText(f"Deducciones: $ {total_deducciones:,.2f}")
-        self.lbl_neto.setText(f"NETO: $ {neto:,.2f}")
+        _m = moneda()
+        self.lbl_haberes.setText(f"Haberes: {_m} {total_haberes:,.2f}")
+        self.lbl_deducciones.setText(f"Deducciones: {_m} {total_deducciones:,.2f}")
+        self.lbl_neto.setText(f"NETO: {_m} {neto:,.2f}")
+
+        # Detectar modo dual
+        self._activar_modo_dual(emp_id)
+
+    # === Modo Dual USD ===
+
+    def _activar_modo_dual(self, emp_id: int):
+        """Muestra/oculta panel dual según configuración del empleado."""
+        if not emp_id or not nomina_ve_service.es_dual(emp_id):
+            self.grp_dual.setVisible(False)
+            return
+
+        self.grp_dual.setVisible(True)
+        emp = empleado_service.obtener(emp_id)
+        self.spin_bono.setValue(float(emp.bono_empresa_usd))
+
+        # Cargar tasas disponibles
+        periodo = self.combo_periodo.currentData() or ""
+        self.combo_tasa.blockSignals(True)
+        self.combo_tasa.clear()
+        tasas = nomina_ve_service.obtener_tasas_disponibles(periodo)
+        if not tasas:
+            # Cargar última tasa disponible
+            from services.finanzas.dolar_service import dolar_service
+            ultimo = dolar_service.obtener_ultimo("venezuela")
+            if ultimo:
+                tasas = [{"fecha": ultimo.fecha, "valor": ultimo.valor}]
+        for t in tasas:
+            self.combo_tasa.addItem(f"{t['fecha']} — {t['valor']:,.2f} Bs", t['valor'])
+        self.combo_tasa.blockSignals(False)
+        self._recalcular_dual()
+
+    def _recalcular_dual(self, *args):
+        """Recalcula preview dual en tiempo real."""
+        emp_id = self.combo_empleado.currentData()
+        tasa = self.combo_tasa.currentData()
+        if not emp_id or not tasa:
+            return
+
+        try:
+            preview = nomina_ve_service.calcular_preview(
+                emp_id, Decimal(str(tasa)),
+                faltas=self.spin_faltas.value(),
+                bono_override=Decimal(str(self.spin_bono.value())),
+            )
+            self.lbl_dual_preview.setText(
+                f"Legal: {preview['sueldo_legal_usd']:.2f} | "
+                f"Compl: {preview['complemento_usd']:.2f} | "
+                f"Bono: {preview['bono_usd']:.2f} | "
+                f"Desc: -{preview['descuento_faltas_usd']:.2f}"
+            )
+            self.lbl_dual_neto.setText(
+                f"NETO USD: $ {preview['neto_nomina_usd']:,.2f}  |  "
+                f"+ Canasta: $ {preview['canasta_usd']:,.2f}  |  "
+                f"TOTAL: $ {preview['neto_total_usd']:,.2f}"
+            )
+        except Exception as e:
+            self.lbl_dual_neto.setText(f"Error: {e}")
 
     def _confirmar(self):
         emp_id = self.combo_empleado.currentData()
         periodo = self.combo_periodo.currentData()
 
         if not emp_id or not periodo:
-            QMessageBox.warning(self, "Error", "Complet\u00e1 empleado y per\u00edodo.")
+            QMessageBox.warning(self, "Error", "Completá empleado y período.")
+            return
+
+        # Modo dual
+        if self.grp_dual.isVisible():
+            self._confirmar_dual(emp_id, periodo)
             return
 
         if not self._calculo or self._calculo["bruto"] <= 0:
@@ -383,7 +495,7 @@ class LiquidarView(QWidget):
 
         resp = QMessageBox.question(
             self, "Confirmar",
-            f"\u00bfLiquidar per\u00edodo {periodo}?\n{neto_text}",
+            f"¿Liquidar período {periodo}?\n{neto_text}",
             QMessageBox.Yes | QMessageBox.No,
         )
         if resp != QMessageBox.Yes:
@@ -392,7 +504,43 @@ class LiquidarView(QWidget):
         try:
             basico = self._calculo["bruto"]
             nomina_service.liquidar(emp_id, periodo, basico, conceptos_ids)
-            QMessageBox.information(self, "\u00c9xito", "Liquidaci\u00f3n registrada correctamente.")
+            QMessageBox.information(self, "Éxito", "Liquidación registrada correctamente.")
+            self.liquidacion_creada.emit()
+        except Exception as e:
+            QMessageBox.critical(self, "Error", str(e))
+
+    def _confirmar_dual(self, emp_id: int, periodo: str):
+        """Confirma liquidación dual (Bs + USD)."""
+        tasa = self.combo_tasa.currentData()
+        if not tasa:
+            QMessageBox.warning(self, "Error", "Seleccioná una tasa BCV.")
+            return
+
+        # Obtener fecha_tasa del combo
+        idx = self.combo_tasa.currentIndex()
+        fecha_tasa_text = self.combo_tasa.itemText(idx).split(" — ")[0]
+        from datetime import datetime
+        fecha_tasa = datetime.strptime(fecha_tasa_text, "%Y-%m-%d").date()
+
+        faltas = self.spin_faltas.value()
+        bono = Decimal(str(self.spin_bono.value()))
+        conceptos_ids = [cid for chk, cid in self._conceptos_checks if chk.isChecked()]
+
+        neto_text = self.lbl_dual_neto.text()
+        resp = QMessageBox.question(
+            self, "Confirmar Liquidación Dual",
+            f"¿Liquidar período {periodo} (Bs + USD)?\n{neto_text}",
+            QMessageBox.Yes | QMessageBox.No,
+        )
+        if resp != QMessageBox.Yes:
+            return
+
+        try:
+            nomina_ve_service.liquidar_dual(
+                emp_id, periodo, fecha_tasa,
+                Decimal(str(tasa)), faltas, bono, conceptos_ids
+            )
+            QMessageBox.information(self, "Éxito", "Liquidación dual registrada (Bs + USD).")
             self.liquidacion_creada.emit()
         except Exception as e:
             QMessageBox.critical(self, "Error", str(e))

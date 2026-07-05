@@ -74,6 +74,10 @@ class Empleado(Base, TimestampMixin):
     hora_salida: Mapped[str] = mapped_column(String(5), default="17:00")
     tipo_liquidacion: Mapped[str] = mapped_column(String(20), default="por_hora")  # por_hora / mensual
     categoria_nomina: Mapped[str] = mapped_column(String(20), default="empleado")  # empleado / directivo
+    # Pago real USD (liquidacion dual VE)
+    pago_total_usd: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("0"))
+    canasta_usd: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("0"))
+    bono_empresa_usd: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("0"))
     # Cuenta bancaria
     banco: Mapped[str] = mapped_column(String(100), default="")
     tipo_cuenta: Mapped[str] = mapped_column(String(30), default="")  # cta_ahorro, cta_corriente

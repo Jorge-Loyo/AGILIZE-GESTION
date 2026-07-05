@@ -12,6 +12,7 @@ SUBMODULOS_FINANZAS = [
     {"codigo": "impuestos", "label": "Contabilidad", "icon": "fa5s.book"},
     {"codigo": "caja", "label": "Caja", "icon": "fa5s.cash-register"},
     {"codigo": "reportes_fin", "label": "Bancos", "icon": "fa5s.university"},
+    {"codigo": "historial_dolar", "label": "Historial Dolar", "icon": "fa5s.dollar-sign"},
 ]
 
 
@@ -105,6 +106,9 @@ class FinanzasView(QWidget):
         if codigo == "reportes_fin":
             from modulos.finanzas.views.bancos_view import BancosView
             return BancosView()
+        if codigo == "historial_dolar":
+            from modulos.finanzas.views.historial_dolar_view import HistorialDolarView
+            return HistorialDolarView()
         return QWidget()
 
     def _navigate(self, index: int):

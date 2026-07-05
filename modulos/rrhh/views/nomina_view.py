@@ -11,7 +11,9 @@ from modulos.rrhh.views.sac_view import SACView
 from modulos.rrhh.views.resumen_mensual_view import ResumenMensualView
 from services.rrhh.nomina_service import nomina_service
 from services.rrhh.recibo_pdf_service import generar_recibo_pdf
+from services.rrhh.recibo_real_ve_service import generar_recibo_real_usd
 from services.herramientas.export_service import exportar_excel
+from services.core.pais_config_service import moneda
 import os
 
 
@@ -115,6 +117,13 @@ class NominaView(QWidget):
         btn_print.clicked.connect(self._imprimir_seleccionado)
         bottom.addWidget(btn_print)
 
+        btn_recibo_real = QPushButton("  Recibo Real (USD)")
+        btn_recibo_real.setMinimumHeight(36)
+        btn_recibo_real.setCursor(Qt.PointingHandCursor)
+        btn_recibo_real.setStyleSheet("QPushButton { background-color: #10b981; color: white; } QPushButton:hover { background-color: #059669; }")
+        btn_recibo_real.clicked.connect(self._imprimir_recibo_real)
+        bottom.addWidget(btn_recibo_real)
+
         lista_layout.addLayout(bottom)
         self.stack.addWidget(lista_page)
 
@@ -156,10 +165,10 @@ class NominaView(QWidget):
             nombre = f"{liq.empleado.apellido}, {liq.empleado.nombre}" if liq.empleado else ""
             self.tabla.setItem(i, 0, QTableWidgetItem(nombre))
             self.tabla.setItem(i, 1, QTableWidgetItem(liq.periodo))
-            self.tabla.setItem(i, 2, QTableWidgetItem(f"$ {liq.sueldo_basico:,.2f}"))
-            self.tabla.setItem(i, 3, QTableWidgetItem(f"$ {liq.total_haberes:,.2f}"))
-            self.tabla.setItem(i, 4, QTableWidgetItem(f"$ {liq.total_deducciones:,.2f}"))
-            self.tabla.setItem(i, 5, QTableWidgetItem(f"$ {liq.neto:,.2f}"))
+            self.tabla.setItem(i, 2, QTableWidgetItem(f"{moneda()} {liq.sueldo_basico:,.2f}"))
+            self.tabla.setItem(i, 3, QTableWidgetItem(f"{moneda()} {liq.total_haberes:,.2f}"))
+            self.tabla.setItem(i, 4, QTableWidgetItem(f"{moneda()} {liq.total_deducciones:,.2f}"))
+            self.tabla.setItem(i, 5, QTableWidgetItem(f"{moneda()} {liq.neto:,.2f}"))
 
     def _imprimir_seleccionado(self):
         row = self.tabla.currentRow()
@@ -172,6 +181,27 @@ class NominaView(QWidget):
             os.startfile(filepath)
         except Exception as e:
             QMessageBox.critical(self, "Error", f"No se pudo generar el recibo: {e}")
+
+    def _imprimir_recibo_real(self):
+        """Imprime recibo real USD de la liquidación dual asociada."""
+        row = self.tabla.currentRow()
+        if row < 0 or row >= len(self._liquidaciones):
+            QMessageBox.information(self, "Selección", "Seleccioná una liquidación de la lista.")
+            return
+        liq_id = self._liquidaciones[row].id
+        # Buscar liquidacion dual asociada
+        from core.database import get_db
+        from models.liquidacion_dual import LiquidacionDual
+        with get_db() as db:
+            dual = db.query(LiquidacionDual).filter_by(liquidacion_legal_id=liq_id).first()
+        if not dual:
+            QMessageBox.information(self, "Info", "Esta liquidación no tiene recibo real (USD) asociado.")
+            return
+        try:
+            filepath = generar_recibo_real_usd(dual.id)
+            os.startfile(filepath)
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"No se pudo generar el recibo real: {e}")
 
     def _exportar_liquidaciones(self):
         if not self._liquidaciones:

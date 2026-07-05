@@ -7,6 +7,7 @@ from PySide6.QtCore import Qt, Signal
 from decimal import Decimal
 from core.database import get_db
 from models.nomina import ConceptoNomina
+from services.core.pais_config_service import moneda
 
 
 class EditarConceptoDialog(QDialog):
@@ -101,11 +102,11 @@ class EditarConceptoDialog(QDialog):
             self.input_valor.setRange(0, 100)
         elif calculo == "fijo":
             self.lbl_valor.setText("Monto fijo:")
-            self.input_valor.setPrefix("$ ")
+            self.input_valor.setPrefix(moneda() + " ")
             self.input_valor.setRange(0, 9999999)
         elif calculo == "por_dia":
             self.lbl_valor.setText("Monto/dia:")
-            self.input_valor.setPrefix("$ ")
+            self.input_valor.setPrefix(moneda() + " ")
             self.input_valor.setRange(0, 9999999)
 
     def _cargar_datos(self):

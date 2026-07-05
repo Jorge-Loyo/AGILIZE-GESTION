@@ -9,6 +9,7 @@ from ui.theme_manager import theme_manager
 
 SUBMODULOS_HERRAMIENTAS = [
     {"codigo": "limpiador", "label": "Limpiador Productos", "icon": "fa5s.file-excel"},
+    {"codigo": "categorias", "label": "Limpiador Categorías", "icon": "fa5s.layer-group"},
     {"codigo": "cotizaciones", "label": "Cotizaciones", "icon": "fa5s.dollar-sign"},
     {"codigo": "etiquetas_estante", "label": "Etiquetas Estante", "icon": "fa5s.tag"},
     {"codigo": "etiquetas_producto", "label": "Etiquetas Producto", "icon": "fa5s.barcode"},
@@ -102,6 +103,9 @@ class HerramientasView(QWidget):
         if codigo == "limpiador":
             from modulos.herramientas.views.limpiador_view import LimpiadorView
             return LimpiadorView()
+        if codigo == "categorias":
+            from modulos.herramientas.views.categorias_view import CategoriasView
+            return CategoriasView()
         if codigo == "cotizaciones":
             from modulos.herramientas.views.cotizaciones_view import CotizacionesView
             return CotizacionesView()

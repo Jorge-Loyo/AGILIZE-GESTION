@@ -20,6 +20,25 @@ class ThemeManager:
     def toggle(self, app: QApplication):
         self.current = self.LIGHT if self.current == self.DARK else self.DARK
         self.apply(app)
+        self._guardar(self.current)
+
+    def cargar_tema_guardado(self) -> str:
+        """Lee el tema guardado en BD. Retorna DARK si no hay."""
+        try:
+            from services.core.empresa_service import empresa_service
+            tema = empresa_service.obtener("tema_default")
+            if tema in (self.DARK, self.LIGHT):
+                self.current = tema
+        except Exception:
+            pass
+        return self.current
+
+    def _guardar(self, tema: str):
+        try:
+            from services.core.empresa_service import empresa_service
+            empresa_service.guardar("tema_default", tema)
+        except Exception:
+            pass
 
 
 theme_manager = ThemeManager()

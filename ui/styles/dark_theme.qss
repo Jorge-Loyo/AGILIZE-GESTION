@@ -353,3 +353,29 @@ QLabel#warning {
     background-color: #2a2a2a;
     color: #D4AF37;
 }
+
+
+/* Calendar popup */
+QCalendarWidget {
+    min-width: 300px;
+    min-height: 250px;
+}
+QCalendarWidget QAbstractItemView {
+    font-size: 13px;
+    selection-background-color: #D4AF37;
+    selection-color: #0f0f0f;
+}
+QCalendarWidget QAbstractItemView::item {
+    padding: 6px;
+    min-width: 32px;
+    min-height: 28px;
+}
+QCalendarWidget QWidget#qt_calendar_navigationbar {
+    background-color: #1a1a1a;
+    min-height: 32px;
+}
+QCalendarWidget QToolButton {
+    color: #F8F9FA;
+    font-size: 12px;
+    padding: 4px 8px;
+}

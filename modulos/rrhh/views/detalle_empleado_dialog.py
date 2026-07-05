@@ -112,8 +112,8 @@ class EmpleadoDetalleDialog(QDialog):
             for i, reg in enumerate(historico):
                 tabla.setItem(i, 0, QTableWidgetItem(reg.fecha_cambio.strftime("%d/%m/%Y %H:%M")))
                 tabla.setItem(i, 1, QTableWidgetItem(nombres_campo.get(reg.campo, reg.campo)))
-                tabla.setItem(i, 2, QTableWidgetItem(f"$ {reg.valor_anterior:,.2f}"))
-                tabla.setItem(i, 3, QTableWidgetItem(f"$ {reg.valor_nuevo:,.2f}"))
+                tabla.setItem(i, 2, QTableWidgetItem(f"{moneda()} {reg.valor_anterior:,.2f}"))
+                tabla.setItem(i, 3, QTableWidgetItem(f"{moneda()} {reg.valor_nuevo:,.2f}"))
             grid.addWidget(tabla, row, 0, 1, 4)
 
         scroll.setWidget(content)

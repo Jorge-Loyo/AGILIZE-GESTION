@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, Signal, QDate, QTime
 from PySide6.QtGui import QIntValidator
 from services.rrhh.empleado_service import empleado_service
-from services.core.pais_config_service import label_doc_identidad, label_id_fiscal
+from services.core.pais_config_service import label_doc_identidad, label_id_fiscal, moneda
 from decimal import Decimal
 
 
@@ -71,7 +71,7 @@ class FormEmpleado(QWidget):
         form1.addWidget(QLabel(f"{self._lbl_dni} *"), 1, 0)
         self.input_dni = QLineEdit()
         self.input_dni.setMinimumHeight(32)
-        self.input_dni.setPlaceholderText("7-9 dígitos")
+        self.input_dni.setPlaceholderText("Documento de identidad")
         self.input_dni.setMaxLength(15)
         form1.addWidget(self.input_dni, 1, 1)
 
@@ -196,12 +196,13 @@ class FormEmpleado(QWidget):
             self._dias_checks[code] = chk
         form3.addWidget(dias_widget, 1, 1, 1, 5)
 
+        _mon = moneda() + " "
         form3.addWidget(QLabel("Valor Hora"), 2, 0)
         self.input_valor_hora = QDoubleSpinBox()
         self.input_valor_hora.setMinimumHeight(32)
         self.input_valor_hora.setRange(0, 999999)
         self.input_valor_hora.setDecimals(2)
-        self.input_valor_hora.setPrefix("$ ")
+        self.input_valor_hora.setPrefix(_mon)
         self.input_valor_hora.valueChanged.connect(self._on_valor_hora_changed)
         form3.addWidget(self.input_valor_hora, 2, 1)
 
@@ -210,7 +211,7 @@ class FormEmpleado(QWidget):
         self.input_sueldo_mensual.setMinimumHeight(32)
         self.input_sueldo_mensual.setRange(0, 99999999)
         self.input_sueldo_mensual.setDecimals(2)
-        self.input_sueldo_mensual.setPrefix("$ ")
+        self.input_sueldo_mensual.setPrefix(_mon)
         self.input_sueldo_mensual.valueChanged.connect(self._on_sueldo_mensual_changed)
         form3.addWidget(self.input_sueldo_mensual, 2, 3)
 
@@ -223,7 +224,7 @@ class FormEmpleado(QWidget):
         self.input_valor_hora_extra.setMinimumHeight(32)
         self.input_valor_hora_extra.setRange(0, 999999)
         self.input_valor_hora_extra.setDecimals(2)
-        self.input_valor_hora_extra.setPrefix("$ ")
+        self.input_valor_hora_extra.setPrefix(_mon)
         form3.addWidget(self.input_valor_hora_extra, 3, 1)
 
         form3.addWidget(QLabel("Tipo Liquidación"), 3, 2)
@@ -237,6 +238,43 @@ class FormEmpleado(QWidget):
         form3.addWidget(self.lbl_calculo, 2, 4, 1, 2)
 
         content_layout.addWidget(grp_jornada)
+
+        # === Pago Real (USD) — Liquidación Dual VE ===
+        grp_dual = self._create_group("Pago Real (USD)")
+        form_dual = QGridLayout(grp_dual)
+        form_dual.setSpacing(8)
+        form_dual.setColumnStretch(1, 1)
+        form_dual.setColumnStretch(3, 1)
+
+        form_dual.addWidget(QLabel("Pago Total USD"), 0, 0)
+        self.input_pago_total_usd = QDoubleSpinBox()
+        self.input_pago_total_usd.setMinimumHeight(32)
+        self.input_pago_total_usd.setRange(0, 99999)
+        self.input_pago_total_usd.setDecimals(2)
+        self.input_pago_total_usd.setPrefix("$ ")
+        form_dual.addWidget(self.input_pago_total_usd, 0, 1)
+
+        form_dual.addWidget(QLabel("Canasta USD"), 0, 2)
+        self.input_canasta_usd = QDoubleSpinBox()
+        self.input_canasta_usd.setMinimumHeight(32)
+        self.input_canasta_usd.setRange(0, 99999)
+        self.input_canasta_usd.setDecimals(2)
+        self.input_canasta_usd.setPrefix("$ ")
+        form_dual.addWidget(self.input_canasta_usd, 0, 3)
+
+        form_dual.addWidget(QLabel("Bono Empresa USD"), 1, 0)
+        self.input_bono_empresa_usd = QDoubleSpinBox()
+        self.input_bono_empresa_usd.setMinimumHeight(32)
+        self.input_bono_empresa_usd.setRange(0, 99999)
+        self.input_bono_empresa_usd.setDecimals(2)
+        self.input_bono_empresa_usd.setPrefix("$ ")
+        form_dual.addWidget(self.input_bono_empresa_usd, 1, 1)
+
+        self.lbl_dual_info = QLabel("Si Pago Total > 0, se activa liquidación dual (Bs + USD)")
+        self.lbl_dual_info.setObjectName("subtitle")
+        form_dual.addWidget(self.lbl_dual_info, 1, 2, 1, 2)
+
+        content_layout.addWidget(grp_dual)
 
         # === Observaciones ===
         grp_obs = self._create_group("Observaciones")
@@ -304,7 +342,7 @@ class FormEmpleado(QWidget):
         if email:
             email_pattern = r"^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$"
             if not re.match(email_pattern, email):
-                return "El email no tiene un formato válido."
+                return "El email no tiene un formato válido (ej: usuario@dominio.com)."
 
         # Edad mínima 17 años
         fecha_nac = self.input_fecha_nac.date().toPython()
@@ -435,6 +473,10 @@ class FormEmpleado(QWidget):
         idx_tipo = self.combo_tipo_liquidacion.findData(getattr(emp, "tipo_liquidacion", "por_hora"))
         if idx_tipo >= 0:
             self.combo_tipo_liquidacion.setCurrentIndex(idx_tipo)
+        # Pago dual USD
+        self.input_pago_total_usd.setValue(float(emp.pago_total_usd) if emp.pago_total_usd else 0.0)
+        self.input_canasta_usd.setValue(float(emp.canasta_usd) if emp.canasta_usd else 0.0)
+        self.input_bono_empresa_usd.setValue(float(emp.bono_empresa_usd) if emp.bono_empresa_usd else 0.0)
         self.input_obs.setPlainText(emp.observaciones or "")
         self._calculando = False
         self._calcular_edad()
@@ -456,7 +498,7 @@ class FormEmpleado(QWidget):
             "apellido": self.input_apellido.text().strip(),
             "dni": self.input_dni.text().strip(),
             "cuil": self.input_cuil.text().strip(),
-            "email": self.input_email.text().strip(),
+            "email": self.input_email.text().strip().lower(),
             "telefono": self.input_telefono.text().strip(),
             "direccion": self.input_direccion.text().strip(),
             "fecha_nacimiento": fecha_nac,
@@ -473,6 +515,9 @@ class FormEmpleado(QWidget):
             "hora_salida": self.input_hora_salida.time().toString("HH:mm"),
             "dias_laborales": ",".join(code for code, chk in self._dias_checks.items() if chk.isChecked()),
             "tipo_liquidacion": self.combo_tipo_liquidacion.currentData(),
+            "pago_total_usd": self.input_pago_total_usd.value(),
+            "canasta_usd": self.input_canasta_usd.value(),
+            "bono_empresa_usd": self.input_bono_empresa_usd.value(),
             "observaciones": self.input_obs.toPlainText().strip(),
         }
 

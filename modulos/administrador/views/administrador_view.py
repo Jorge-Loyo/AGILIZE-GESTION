@@ -47,6 +47,7 @@ GRUPOS_ADMIN = [
         "items": [
             {"codigo": "adm_sucursales", "label": "Sucursales", "icon": "fa5s.store"},
             {"codigo": "adm_departamentos", "label": "Departamentos", "icon": "fa5s.sitemap"},
+            {"codigo": "adm_cargos", "label": "Cargos", "icon": "fa5s.id-badge"},
             {"codigo": "adm_tipos_compra", "label": "Tipos de Compra", "icon": "fa5s.shopping-basket"},
         ],
     },
@@ -121,9 +122,9 @@ class AdministradorView(QWidget):
         btn_theme.clicked.connect(lambda: theme_manager.toggle(__import__('PySide6.QtWidgets', fromlist=['QApplication']).QApplication.instance()))
         sidebar_layout.addWidget(btn_theme)
         btn_logout = QPushButton("  Salir")
-        btn_logout.setIcon(qta.icon("fa5s.sign-out-alt", color="#ffffff"))
+        btn_logout.setIcon(qta.icon("fa5s.sign-out-alt", color="#000000"))
         btn_logout.setCursor(Qt.PointingHandCursor)
-        btn_logout.setStyleSheet("QPushButton { background-color: #ef4444; padding: 6px 10px; } QPushButton:hover { background-color: #dc2626; }")
+        btn_logout.setStyleSheet("QPushButton { background-color: #ef4444; color: #000000; padding: 6px 10px; } QPushButton:hover { background-color: #dc2626; }")
         btn_logout.clicked.connect(self.logout_signal.emit)
         sidebar_layout.addWidget(btn_logout)
 
@@ -228,6 +229,8 @@ class AdministradorView(QWidget):
             return self._simple_crud("Sucursales", "sucursales", ["nombre", "direccion", "telefono"])
         if codigo == "adm_departamentos":
             return self._simple_crud("Departamentos", "departamentos", ["nombre"])
+        if codigo == "adm_cargos":
+            return self._simple_crud("Cargos", "cargos", ["nombre"])
         if codigo == "adm_facturadores":
             from modulos.ventas.views.config_facturadores_view import ConfigFacturadoresView
             return ConfigFacturadoresView()
@@ -283,7 +286,7 @@ class AdministradorView(QWidget):
             if ok and nombre.strip():
                 with get_db() as db:
                     from sqlalchemy import text
-                    db.execute(text(f"INSERT INTO {tabla} ({campos[0]}) VALUES (:v)"), {"v": nombre.strip()})
+                    db.execute(text(f"INSERT INTO {tabla} ({campos[0]}, activo) VALUES (:v, true)"), {"v": nombre.strip()})
                 cargar()
 
         btn.clicked.connect(nuevo)

@@ -3,10 +3,9 @@ from PySide6.QtWidgets import (
     QLineEdit, QPushButton, QSpacerItem, QSizePolicy,
 )
 from PySide6.QtCore import Qt, Signal, QSize
-from PySide6.QtGui import QPixmap
+from PySide6.QtGui import QPixmap, QImage
 import qtawesome as qta
-from services.core.logo_service import get_dev_logo_path
-from services.core.empresa_service import empresa_service
+import base64
 
 
 class LoginView(QWidget):
@@ -15,42 +14,49 @@ class LoginView(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Agilize Gestion")
-        self.setFixedSize(440, 540)
+        self.setFixedSize(440, 600)
         self._pass_visible = False
         self._build_ui()
 
     def _build_ui(self):
         layout = QVBoxLayout(self)
         layout.setAlignment(Qt.AlignCenter)
-        layout.setContentsMargins(60, 40, 60, 40)
+        layout.setContentsMargins(60, 30, 60, 20)
         layout.setSpacing(10)
 
-        # Logo
+        # --- Logo empresa (de Visual) ---
         icon_label = QLabel()
-        try:
-            pixmap = QPixmap(get_dev_logo_path()).scaled(QSize(64, 64), Qt.KeepAspectRatio, Qt.SmoothTransformation)
-            icon_label.setPixmap(pixmap)
-        except Exception:
-            pass
         icon_label.setAlignment(Qt.AlignCenter)
+        try:
+            from services.core.empresa_service import empresa_service
+            datos = empresa_service.obtener_todos()
+        except Exception:
+            datos = {}
+
+        logo_b64 = datos.get("logo_base64", "")
+        if logo_b64:
+            img_bytes = base64.b64decode(logo_b64)
+            img = QImage()
+            img.loadFromData(img_bytes)
+            pixmap = QPixmap.fromImage(img).scaled(80, 80, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            icon_label.setPixmap(pixmap)
+        else:
+            # Fallback: archivo local
+            from services.core.logo_service import get_empresa_logo_path
+            path = get_empresa_logo_path()
+            if path:
+                pixmap = QPixmap(path).scaled(80, 80, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                icon_label.setPixmap(pixmap)
         layout.addWidget(icon_label)
 
-        # Titulo
-        try:
-            nombre = empresa_service.obtener("dev_nombre") or "Agilize"
-        except Exception:
-            nombre = "Agilize"
-        title = QLabel(nombre)
+        # --- Nombre app (de Visual) ---
+        nombre_app = datos.get("nombre_app", "Agilize Gestion")
+        title = QLabel(nombre_app)
         title.setObjectName("title")
         title.setAlignment(Qt.AlignCenter)
         layout.addWidget(title)
 
-        subtitle = QLabel("Gestion Empresarial")
-        subtitle.setObjectName("subtitle")
-        subtitle.setAlignment(Qt.AlignCenter)
-        layout.addWidget(subtitle)
-
-        layout.addSpacerItem(QSpacerItem(0, 30, QSizePolicy.Minimum, QSizePolicy.Fixed))
+        layout.addSpacerItem(QSpacerItem(0, 24, QSizePolicy.Minimum, QSizePolicy.Fixed))
 
         # Usuario
         self.input_user = QLineEdit()
@@ -99,11 +105,51 @@ class LoginView(QWidget):
 
         layout.addStretch()
 
-        # Version
-        version = QLabel("v1.0.0")
-        version.setObjectName("subtitle")
-        version.setAlignment(Qt.AlignCenter)
-        layout.addWidget(version)
+        # --- Desarrollado por (datos de Desarrollador) ---
+        dev_nombre = datos.get("dev_nombre", "")
+        dev_web = datos.get("dev_web", "")
+        dev_logo_b64 = datos.get("dev_logo_base64", "")
+
+        if dev_nombre or dev_logo_b64:
+            sep = QLabel()
+            sep.setFixedHeight(1)
+            sep.setStyleSheet("background-color: #333;")
+            layout.addWidget(sep)
+
+            layout.addSpacerItem(QSpacerItem(0, 6, QSizePolicy.Minimum, QSizePolicy.Fixed))
+
+            lbl_dev = QLabel("Desarrollado por")
+            lbl_dev.setAlignment(Qt.AlignCenter)
+            lbl_dev.setStyleSheet("font-size: 9px; color: #666;")
+            layout.addWidget(lbl_dev)
+
+            # Logo dev + nombre en fila
+            dev_row = QHBoxLayout()
+            dev_row.setAlignment(Qt.AlignCenter)
+            dev_row.setSpacing(8)
+
+            if dev_logo_b64:
+                dev_logo_label = QLabel()
+                dev_logo_label.setAlignment(Qt.AlignCenter)
+                img_bytes = base64.b64decode(dev_logo_b64)
+                img = QImage()
+                img.loadFromData(img_bytes)
+                pixmap = QPixmap.fromImage(img).scaled(24, 24, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                dev_logo_label.setPixmap(pixmap)
+                dev_row.addWidget(dev_logo_label)
+
+            if dev_nombre:
+                lbl_name = QLabel(dev_nombre)
+                lbl_name.setStyleSheet("font-size: 10px; color: #888; font-weight: bold;")
+                dev_row.addWidget(lbl_name)
+
+            layout.addLayout(dev_row)
+
+            if dev_web:
+                lbl_web = QLabel(dev_web)
+                lbl_web.setAlignment(Qt.AlignCenter)
+                lbl_web.setStyleSheet("font-size: 9px; color: #555;")
+                layout.addWidget(lbl_web)
 
         # Enter
         self.input_pass.returnPressed.connect(self._on_login)
@@ -137,7 +183,7 @@ class LoginView(QWidget):
                 self._show_error(msg)
         except Exception as e:
             error_detail = str(e)
-            self._show_error(f"Error de conexion (clic para ver detalle)")
+            self._show_error("Error de conexion (clic para ver detalle)")
             self._last_error_detail = error_detail
             self.lbl_error.setCursor(Qt.PointingHandCursor)
             self.lbl_error.mousePressEvent = lambda ev: self._show_error_dialog(error_detail)

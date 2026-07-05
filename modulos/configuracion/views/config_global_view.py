@@ -12,7 +12,6 @@ import qtawesome as qta
 from ui.theme_manager import theme_manager
 from services.core.empresa_service import empresa_service
 from core.database import get_db
-from models.sucursal import Sucursal
 from core.config import BASE_DIR
 
 
@@ -93,9 +92,9 @@ class ConfigGlobalView(QWidget):
         sidebar_layout.addSpacerItem(QSpacerItem(0, 4, QSizePolicy.Minimum, QSizePolicy.Fixed))
 
         btn_logout = QPushButton("  Cerrar sesion")
-        btn_logout.setIcon(qta.icon("fa5s.sign-out-alt", color="#ffffff"))
+        btn_logout.setIcon(qta.icon("fa5s.sign-out-alt", color="#000000"))
         btn_logout.setCursor(Qt.PointingHandCursor)
-        btn_logout.setStyleSheet("QPushButton { background-color: #ef4444; } QPushButton:hover { background-color: #dc2626; }")
+        btn_logout.setStyleSheet("QPushButton { background-color: #ef4444; color: #000000; } QPushButton:hover { background-color: #dc2626; }")
         btn_logout.clicked.connect(self.logout_signal.emit)
         sidebar_layout.addWidget(btn_logout)
 
@@ -159,7 +158,6 @@ class ConfigGlobalView(QWidget):
         scroll.setFrameShape(QFrame.NoFrame)
 
         page = QWidget()
-        page.setMaximumWidth(750)
         layout = QVBoxLayout(page)
         layout.setContentsMargins(32, 24, 32, 24)
         layout.setSpacing(14)
@@ -239,88 +237,17 @@ class ConfigGlobalView(QWidget):
         pais_layout.addWidget(lbl_pais_info)
         layout.addWidget(grp_pais)
 
-        # Sucursales
-        grp_suc = QGroupBox("Sucursales")
-        grp_suc.setStyleSheet(GRP_STYLE)
-        suc_layout = QVBoxLayout(grp_suc)
-        suc_layout.setSpacing(8)
-
-        suc_form = QHBoxLayout()
-        suc_form.setSpacing(6)
-        lbl_n = QLabel("Nombre:")
-        lbl_n.setStyleSheet("font-size: 11px; color: #aaa;")
-        suc_form.addWidget(lbl_n)
-        self.input_suc_nombre = QLineEdit()
-        self.input_suc_nombre.setFixedHeight(28)
-        self.input_suc_nombre.setPlaceholderText("Ej: Sucursal Centro")
-        suc_form.addWidget(self.input_suc_nombre)
-        lbl_d = QLabel("Direccion:")
-        lbl_d.setStyleSheet("font-size: 11px; color: #aaa;")
-        suc_form.addWidget(lbl_d)
-        self.input_suc_dir = QLineEdit()
-        self.input_suc_dir.setFixedHeight(28)
-        suc_form.addWidget(self.input_suc_dir)
-        btn_suc = QPushButton("Agregar")
-        btn_suc.setFixedHeight(28)
-        btn_suc.setFixedWidth(80)
-        btn_suc.setCursor(Qt.PointingHandCursor)
-        btn_suc.clicked.connect(self._agregar_sucursal)
-        suc_form.addWidget(btn_suc)
-        suc_layout.addLayout(suc_form)
-
-        from PySide6.QtWidgets import QTableWidget, QTableWidgetItem, QHeaderView
-        self.tabla_sucursales = QTableWidget()
-        self.tabla_sucursales.setColumnCount(3)
-        self.tabla_sucursales.setHorizontalHeaderLabels(["Nombre", "Direccion", "Estado"])
-        self.tabla_sucursales.horizontalHeader().setStretchLastSection(True)
-        self.tabla_sucursales.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.tabla_sucursales.setAlternatingRowColors(True)
-        self.tabla_sucursales.verticalHeader().setVisible(False)
-        self.tabla_sucursales.setEditTriggers(QTableWidget.NoEditTriggers)
-        self.tabla_sucursales.setMaximumHeight(130)
-        suc_layout.addWidget(self.tabla_sucursales)
-
-        layout.addWidget(grp_suc)
-        self._cargar_sucursales()
-
         layout.addStretch()
 
         # Centrar
         wrapper = QWidget()
         wrapper_layout = QHBoxLayout(wrapper)
         wrapper_layout.setContentsMargins(0, 0, 0, 0)
-        wrapper_layout.addStretch()
         wrapper_layout.addWidget(page)
-        wrapper_layout.addStretch()
 
         scroll.setWidget(wrapper)
         return scroll
 
-    def _cargar_sucursales(self):
-        from PySide6.QtWidgets import QTableWidgetItem
-        with get_db() as db:
-            sucursales = db.query(Sucursal).order_by(Sucursal.nombre).all()
-            self.tabla_sucursales.setRowCount(len(sucursales))
-            for i, s in enumerate(sucursales):
-                self.tabla_sucursales.setItem(i, 0, QTableWidgetItem(s.nombre))
-                self.tabla_sucursales.setItem(i, 1, QTableWidgetItem(s.direccion or ""))
-                self.tabla_sucursales.setItem(i, 2, QTableWidgetItem("Activa" if s.activo else "Inactiva"))
-
-    def _agregar_sucursal(self):
-        nombre = self.input_suc_nombre.text().strip()
-        if not nombre:
-            QMessageBox.warning(self, "Error", "El nombre es obligatorio.")
-            return
-        direccion = self.input_suc_dir.text().strip()
-        try:
-            with get_db() as db:
-                db.add(Sucursal(nombre=nombre, direccion=direccion))
-            self.input_suc_nombre.clear()
-            self.input_suc_dir.clear()
-            self._cargar_sucursales()
-            QMessageBox.information(self, "OK", f"Sucursal '{nombre}' creada.")
-        except Exception as e:
-            QMessageBox.critical(self, "Error", str(e))
 
     def _guardar_empresa(self):
         datos = {clave: inp.text().strip() for clave, inp in self._empresa_inputs.items()}
@@ -338,7 +265,6 @@ class ConfigGlobalView(QWidget):
         scroll.setFrameShape(QFrame.NoFrame)
 
         page = QWidget()
-        page.setMaximumWidth(600)
         layout = QVBoxLayout(page)
         layout.setContentsMargins(32, 24, 32, 24)
         layout.setSpacing(14)
@@ -395,6 +321,32 @@ class ConfigGlobalView(QWidget):
 
         layout.addWidget(grp_logo)
 
+        # Tema por defecto
+        grp_tema = QGroupBox("Tema por Defecto")
+        grp_tema.setStyleSheet(GRP_STYLE)
+        tema_layout = QHBoxLayout(grp_tema)
+        tema_layout.setSpacing(12)
+        lbl_tema = QLabel("La aplicacion arrancara con este tema:")
+        lbl_tema.setStyleSheet("font-size: 11px; color: #888; font-weight: normal;")
+        tema_layout.addWidget(lbl_tema)
+        self._combo_tema = QComboBox()
+        self._combo_tema.setFixedHeight(28)
+        self._combo_tema.setFixedWidth(150)
+        self._combo_tema.addItem("Oscuro", "dark")
+        self._combo_tema.addItem("Claro", "light")
+        tema_actual = datos.get("tema_default", "dark")
+        idx_tema = self._combo_tema.findData(tema_actual)
+        if idx_tema >= 0:
+            self._combo_tema.setCurrentIndex(idx_tema)
+        tema_layout.addWidget(self._combo_tema)
+        tema_layout.addStretch()
+        btn_preview_tema = QPushButton("Vista previa")
+        btn_preview_tema.setFixedHeight(28)
+        btn_preview_tema.setCursor(Qt.PointingHandCursor)
+        btn_preview_tema.clicked.connect(self._preview_tema)
+        tema_layout.addWidget(btn_preview_tema)
+        layout.addWidget(grp_tema)
+
         # Guardar alineado a la derecha
         save_row = QHBoxLayout()
         save_row.addStretch()
@@ -409,13 +361,10 @@ class ConfigGlobalView(QWidget):
 
         layout.addStretch()
 
-        # Centrar
         wrapper = QWidget()
         wrapper_layout = QHBoxLayout(wrapper)
         wrapper_layout.setContentsMargins(0, 0, 0, 0)
-        wrapper_layout.addStretch()
         wrapper_layout.addWidget(page)
-        wrapper_layout.addStretch()
 
         scroll.setWidget(wrapper)
         return scroll
@@ -446,12 +395,21 @@ class ConfigGlobalView(QWidget):
     def _guardar_visual(self):
         datos = {
             "nombre_app": self.input_nombre_app.text().strip(),
+            "tema_default": self._combo_tema.currentData(),
         }
         try:
             empresa_service.guardar_multiples(datos)
+            # Aplicar tema seleccionado
+            from PySide6.QtWidgets import QApplication
+            theme_manager.apply(QApplication.instance(), self._combo_tema.currentData())
             QMessageBox.information(self, "OK", "Configuracion visual guardada.")
         except Exception as e:
             QMessageBox.critical(self, "Error", str(e))
+
+    def _preview_tema(self):
+        """Aplica el tema seleccionado como vista previa sin guardar."""
+        from PySide6.QtWidgets import QApplication
+        theme_manager.apply(QApplication.instance(), self._combo_tema.currentData())
 
     # === DESARROLLADOR ===
     def _build_dev_page(self) -> QWidget:
@@ -460,7 +418,6 @@ class ConfigGlobalView(QWidget):
         scroll.setFrameShape(QFrame.NoFrame)
 
         page = QWidget()
-        page.setMaximumWidth(700)
         layout = QVBoxLayout(page)
         layout.setContentsMargins(32, 24, 32, 24)
         layout.setSpacing(14)
@@ -495,7 +452,7 @@ class ConfigGlobalView(QWidget):
 
         btn_dev_logo = QPushButton("Cambiar logo")
         btn_dev_logo.setFixedHeight(30)
-        btn_dev_logo.setFixedWidth(110)
+        btn_dev_logo.setFixedWidth(140)
         btn_dev_logo.setCursor(Qt.PointingHandCursor)
         btn_dev_logo.clicked.connect(self._seleccionar_dev_logo)
         top_row.addWidget(btn_dev_logo)
@@ -578,7 +535,7 @@ class ConfigGlobalView(QWidget):
         btn_aplicar_pais = QPushButton("  Aplicar")
         btn_aplicar_pais.setIcon(qta.icon("fa5s.globe", color="#10b981"))
         btn_aplicar_pais.setFixedHeight(28)
-        btn_aplicar_pais.setFixedWidth(100)
+        btn_aplicar_pais.setFixedWidth(130)
         btn_aplicar_pais.setCursor(Qt.PointingHandCursor)
         btn_aplicar_pais.clicked.connect(self._aplicar_pais)
         pais_row.addWidget(btn_aplicar_pais)
@@ -669,9 +626,7 @@ class ConfigGlobalView(QWidget):
         wrapper = QWidget()
         wrapper_layout = QHBoxLayout(wrapper)
         wrapper_layout.setContentsMargins(0, 0, 0, 0)
-        wrapper_layout.addStretch()
         wrapper_layout.addWidget(page)
-        wrapper_layout.addStretch()
 
         scroll.setWidget(wrapper)
         return scroll

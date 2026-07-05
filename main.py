@@ -60,6 +60,13 @@ class AppController:
         self._login_window = None
         self._main_window = None
 
+        # Aplicar tema guardado (requiere BD conectada)
+        try:
+            tema = theme_manager.cargar_tema_guardado()
+            theme_manager.apply(self.app, tema)
+        except Exception:
+            pass
+
     def run(self):
         self._show_login()
         sys.exit(self.app.exec())
@@ -186,6 +193,7 @@ def main():
                 from models import config_nomina, permiso_empleado, empresa  # noqa
                 from models import sucursal, historico_sueldo, vacaciones  # noqa
                 from models import aprobacion_extras, inventario  # noqa
+                from models import historial_dolar, liquidacion_dual  # noqa
                 Base.metadata.create_all(engine)
                 logger.info("Tablas creadas. Ejecutando seed...")
                 _run_seed()
@@ -193,6 +201,16 @@ def main():
             logger.error(f"Error creando tablas: {e2}")
 
     controller = AppController()
+
+    # Iniciar scheduler de dolar
+    try:
+        from services.core.empresa_service import empresa_service
+        from services.finanzas.dolar_service import dolar_service
+        pais = (empresa_service.obtener("cotizacion_pais") or "venezuela").lower().strip()
+        dolar_service.iniciar_scheduler(pais, hora=12)
+    except Exception as e:
+        logger.warning(f"Scheduler dolar no iniciado: {e}")
+
     controller.run()
     logger.info("Aplicacion cerrada")
 

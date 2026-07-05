@@ -260,12 +260,12 @@ class ConfigRRHHView(QWidget):
             self.lbl_valor_info.setText("Se aplica sobre el sueldo bruto")
         elif calculo == "fijo":
             self.lbl_valor.setText("Monto fijo:")
-            self.concepto_valor.setPrefix("$ ")
+            self.concepto_valor.setPrefix(moneda() + " ")
             self.concepto_valor.setRange(0, 9999999)
             self.lbl_valor_info.setText("Valor fijo por liquidacion")
         elif calculo == "por_dia":
             self.lbl_valor.setText("Monto/dia:")
-            self.concepto_valor.setPrefix("$ ")
+            self.concepto_valor.setPrefix(moneda() + " ")
             self.concepto_valor.setRange(0, 9999999)
             self.lbl_valor_info.setText("Se multiplica por dias trabajados del periodo")
 

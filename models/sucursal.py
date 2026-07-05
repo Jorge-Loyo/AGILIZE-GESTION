@@ -8,8 +8,8 @@ class Sucursal(Base, TimestampMixin):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     nombre: Mapped[str] = mapped_column(String(100))
-    direccion: Mapped[str] = mapped_column(String(250), default="")
-    telefono: Mapped[str] = mapped_column(String(50), default="")
-    activo: Mapped[bool] = mapped_column(Boolean, default=True)
+    direccion: Mapped[str | None] = mapped_column(String(250), nullable=True, server_default="")
+    telefono: Mapped[str | None] = mapped_column(String(50), nullable=True, server_default="")
+    activo: Mapped[bool] = mapped_column(Boolean, server_default="true", default=True)
 
     empleados = relationship("Empleado", back_populates="sucursal")

@@ -16,3 +16,21 @@ from models.audit_log import AuditLog  # noqa
 from models.sac import SACRegistro, SACLiquidacion  # noqa
 from models.aprobacion_extras import AprobacionExtras  # noqa
 from models.config_nomina import ConfigNomina  # noqa
+from models.historial_dolar import HistorialDolar  # noqa
+from models.liquidacion_dual import LiquidacionDual  # noqa
+from models.permiso_empleado import *  # noqa
+from models.reclutamiento import *  # noqa
+from models.inventario import *  # noqa
+from models.comercial import *  # noqa
+from models.comercial_precios import *  # noqa
+from models.compras import *  # noqa
+from models.cuentas import *  # noqa
+from models.datos import *  # noqa
+from models.caja_pos import *  # noqa
+from models.facturador import *  # noqa
+from models.finanzas import (  # noqa
+    CuentaContable, Asiento, AsientoDetalle,
+    Factura, FacturaDetalle,
+    CuentaBancaria, MovimientoBanco,
+    Caja, MovimientoCaja,
+)
