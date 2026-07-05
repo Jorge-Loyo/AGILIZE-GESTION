@@ -82,7 +82,11 @@ class LegajoView(QWidget):
         form = QFormLayout()
 
         combo_tipo = QComboBox()
-        combo_tipo.addItems(["ascenso", "cambio_sueldo", "sancion", "herramienta", "evaluacion", "capacitacion", "otro"])
+        from core.database import get_db
+        from sqlalchemy import text
+        with get_db() as db:
+            tipos = db.execute(text("SELECT nombre FROM tipos_evento_legajo WHERE activo=true ORDER BY nombre")).fetchall()
+            combo_tipo.addItems([t[0] for t in tipos] if tipos else ["Otro"])
         form.addRow("Tipo:", combo_tipo)
         input_titulo = QLineEdit()
         input_titulo.setMaxLength(200)

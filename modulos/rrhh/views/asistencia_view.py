@@ -16,6 +16,7 @@ from services.rrhh.permiso_ausencia_service import permiso_ausencia_service
 from services.rrhh.empleado_service import empleado_service
 from services.herramientas.export_service import exportar_excel
 from services.rrhh.import_fichadas_service import importar_fichadas, pre_scan_xlsx
+from services.core.auth_service import auth_service
 import os
 
 
@@ -30,12 +31,20 @@ class AsistenciaView(QWidget):
         layout.setContentsMargins(24, 24, 24, 24)
         layout.setSpacing(0)
 
+        es_admin = auth_service.current_user and auth_service.current_user.rol_id == 1
         tabs = QTabWidget()
-        tabs.addTab(self._build_registro_tab(), "Registro")
-        tabs.addTab(self._build_permisos_tab(), "Permisos / Licencias")
-        tabs.addTab(self._build_ausencias_tab(), "Ausencias")
-        tabs.addTab(self._build_vacaciones_tab(), "Vacaciones")
-        tabs.addTab(self._build_aprobacion_extras_tab(), "Aprobacion Extras")
+
+        TABS = [
+            ("rrhh.asistencia.registro", "Registro", self._build_registro_tab),
+            ("rrhh.asistencia.permisos", "Permisos / Licencias", self._build_permisos_tab),
+            ("rrhh.asistencia.ausencias", "Ausencias", self._build_ausencias_tab),
+            ("rrhh.asistencia.vacaciones", "Vacaciones", self._build_vacaciones_tab),
+            ("rrhh.asistencia.extras", "Aprobacion Extras", self._build_aprobacion_extras_tab),
+        ]
+        for codigo, label, builder in TABS:
+            if es_admin or auth_service.tiene_permiso(codigo, "ver"):
+                tabs.addTab(builder(), label)
+
         layout.addWidget(tabs)
 
     # === TAB REGISTRO ===

@@ -5,6 +5,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, Signal
 import qtawesome as qta
 from ui.theme_manager import theme_manager
+from services.core.auth_service import auth_service
 
 
 SUBMODULOS_RRHH = [
@@ -62,17 +63,24 @@ class RRHHView(QWidget):
         # Botones de sub-modulos
         self.stack = QStackedWidget()
 
-        for i, sub in enumerate(SUBMODULOS_RRHH):
+        es_admin = auth_service.current_user and auth_service.current_user.rol_id == 1
+        idx = 0
+        for sub in SUBMODULOS_RRHH:
+            perm_code = f"rrhh.{sub['codigo']}"
+            if not es_admin and not auth_service.tiene_permiso(perm_code, "ver"):
+                continue
+
             btn = QPushButton(f"  {sub['label']}")
             btn.setIcon(qta.icon(sub["icon"], color="#8a8a8a"))
             btn.setCursor(Qt.PointingHandCursor)
             btn.setCheckable(True)
-            btn.clicked.connect(lambda checked, idx=i: self._navigate(idx))
+            btn.clicked.connect(lambda checked, i=idx: self._navigate(i))
             sidebar_layout.addWidget(btn)
             self._buttons.append(btn)
 
             page = self._create_submodule(sub["codigo"])
             self.stack.addWidget(page)
+            idx += 1
 
         sidebar_layout.addStretch()
 

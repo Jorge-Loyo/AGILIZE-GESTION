@@ -15,6 +15,7 @@ from services.rrhh.config_nomina_service import config_nomina_service
 from services.rrhh.permiso_ausencia_service import permiso_ausencia_service
 from services.core.empresa_service import empresa_service
 from services.core.pais_config_service import moneda
+from services.core.auth_service import auth_service
 from core.config import BASE_DIR
 
 
@@ -34,12 +35,19 @@ class ConfigRRHHView(QWidget):
         layout.addSpacing(12)
 
         tabs = QTabWidget()
-        tabs.addTab(self._build_periodo_pago_tab(), "Periodo de Pago")
-        tabs.addTab(self._build_multiplicadores_tab(), "Valor Hora Extra")
-        tabs.addTab(self._build_sac_tab(), "SAC")
-        tabs.addTab(self._build_conceptos_tab(), "Conceptos Nomina")
-        tabs.addTab(self._build_permisos_tab(), "Tipos de Permiso")
-        tabs.addTab(self._build_feriados_tab(), "Feriados")
+        es_admin = auth_service.current_user and auth_service.current_user.rol_id == 1
+
+        TABS = [
+            ("rrhh.config.periodo", "Periodo de Pago", self._build_periodo_pago_tab),
+            ("rrhh.config.multiplicadores", "Valor Hora Extra", self._build_multiplicadores_tab),
+            ("rrhh.config.sac", "SAC", self._build_sac_tab),
+            ("rrhh.config.conceptos", "Conceptos Nomina", self._build_conceptos_tab),
+            ("rrhh.config.permisos", "Tipos de Permiso", self._build_permisos_tab),
+            ("rrhh.config.feriados", "Feriados", self._build_feriados_tab),
+        ]
+        for codigo, label, builder in TABS:
+            if es_admin or auth_service.tiene_permiso(codigo, "ver"):
+                tabs.addTab(builder(), label)
         layout.addWidget(tabs)
 
     # === TAB MULTIPLICADORES ===

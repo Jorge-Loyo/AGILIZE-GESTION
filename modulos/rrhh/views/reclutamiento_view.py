@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 import qtawesome as qta
+from services.core.auth_service import auth_service
 
 
 class ReclutamientoView(QWidget):
@@ -23,9 +24,16 @@ class ReclutamientoView(QWidget):
         title.setStyleSheet("font-size: 16px; font-weight: bold; color: #D4AF37;")
         layout.addWidget(title)
 
+        es_admin = auth_service.current_user and auth_service.current_user.rol_id == 1
         tabs = QTabWidget()
-        tabs.addTab(self._build_vacantes(), "Vacantes")
-        tabs.addTab(self._build_candidatos(), "Candidatos")
+
+        TABS = [
+            ("rrhh.reclutamiento.vacantes", "Vacantes", self._build_vacantes),
+            ("rrhh.reclutamiento.candidatos", "Candidatos", self._build_candidatos),
+        ]
+        for codigo, label, builder in TABS:
+            if es_admin or auth_service.tiene_permiso(codigo, "ver"):
+                tabs.addTab(builder(), label)
         layout.addWidget(tabs)
 
     def _build_vacantes(self):

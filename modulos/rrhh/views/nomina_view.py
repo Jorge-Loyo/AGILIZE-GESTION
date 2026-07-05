@@ -14,6 +14,7 @@ from services.rrhh.recibo_pdf_service import generar_recibo_pdf
 from services.rrhh.recibo_real_ve_service import generar_recibo_real_usd
 from services.herramientas.export_service import exportar_excel
 from services.core.pais_config_service import moneda
+from services.core.auth_service import auth_service
 import os
 
 
@@ -27,13 +28,21 @@ class NominaView(QWidget):
         layout.setContentsMargins(24, 24, 24, 24)
         layout.setSpacing(0)
 
+        es_admin = auth_service.current_user and auth_service.current_user.rol_id == 1
         tabs = QTabWidget()
-        tabs.addTab(self._build_liquidaciones_tab(), "Liquidaciones")
-        tabs.addTab(ResumenMensualView(), "Resumen Mensual")
-        tabs.addTab(AdelantosView(), "Adelantos")
-        tabs.addTab(SACView(), "SAC (Aguinaldo)")
+
         from modulos.rrhh.views.novedades_mensuales_view import NovedadesMensualesView
-        tabs.addTab(NovedadesMensualesView(), "Novedades Mensuales")
+        TABS = [
+            ("rrhh.nomina.liquidaciones", "Liquidaciones", self._build_liquidaciones_tab),
+            ("rrhh.nomina.resumen", "Resumen Mensual", ResumenMensualView),
+            ("rrhh.nomina.adelantos", "Adelantos", AdelantosView),
+            ("rrhh.nomina.sac", "SAC (Aguinaldo)", SACView),
+            ("rrhh.nomina.novedades", "Novedades Mensuales", NovedadesMensualesView),
+        ]
+        for codigo, label, builder in TABS:
+            if es_admin or auth_service.tiene_permiso(codigo, "ver"):
+                tabs.addTab(builder(), label)
+
         layout.addWidget(tabs)
 
     def _build_liquidaciones_tab(self) -> QWidget:

@@ -6,6 +6,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 import qtawesome as qta
+from services.core.auth_service import auth_service
 
 
 class FichajeView(QWidget):
@@ -22,11 +23,18 @@ class FichajeView(QWidget):
         title.setStyleSheet("font-size: 16px; font-weight: bold; color: #D4AF37;")
         layout.addWidget(title)
 
+        es_admin = auth_service.current_user and auth_service.current_user.rol_id == 1
         tabs = QTabWidget()
-        tabs.addTab(self._build_fichaje(), "Fichar")
-        tabs.addTab(self._build_importar(), "Importar Fichadas")
-        tabs.addTab(self._build_turnos(), "Turnos Laborales")
-        tabs.addTab(self._build_fichajes_hoy(), "Fichajes del Dia")
+
+        TABS = [
+            ("rrhh.fichaje.fichar", "Fichar", self._build_fichaje),
+            ("rrhh.fichaje.importar", "Importar Fichadas", self._build_importar),
+            ("rrhh.fichaje.turnos", "Turnos Laborales", self._build_turnos),
+            ("rrhh.fichaje.hoy", "Fichajes del Dia", self._build_fichajes_hoy),
+        ]
+        for codigo, label, builder in TABS:
+            if es_admin or auth_service.tiene_permiso(codigo, "ver"):
+                tabs.addTab(builder(), label)
         layout.addWidget(tabs)
 
     def _build_fichaje(self):

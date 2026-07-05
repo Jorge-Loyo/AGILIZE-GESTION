@@ -54,16 +54,26 @@ class MainWindow(QMainWindow):
         shortcut.activated.connect(self._busqueda.toggle)
 
         modulos_accesibles = auth_service.modulos_accesibles()
-        for mod in ["compras", "inventario", "ventas", "facturador", "empleados", "cuentas", "finanzas", "reportes", "herramientas", "importador", "administrador", "conexiones", "admin"]:
-            if mod not in modulos_accesibles:
-                modulos_accesibles.append(mod)
+
+        # Mapeo: codigo en MODULOS_CONFIG -> codigo en permisos BD
+        _MAP_PERM = {
+            "empleados": "rrhh", "admin": "configuracion",
+        }
+        es_admin = auth_service.current_user and auth_service.current_user.rol_id == 1
 
         orden = ["compras", "inventario", "ventas", "facturador", "empleados", "cuentas", "finanzas", "reportes", "herramientas", "importador", "administrador", "conexiones", "admin"]
         modulos_data = []
         for codigo in orden:
-            if codigo in modulos_accesibles and codigo in MODULOS_CONFIG:
+            if codigo not in MODULOS_CONFIG:
+                continue
+            if es_admin:
                 config = MODULOS_CONFIG[codigo]
                 modulos_data.append({"codigo": codigo, "label": config["label"], "icon": config["icon"]})
+            else:
+                perm_code = _MAP_PERM.get(codigo, codigo)
+                if perm_code in modulos_accesibles:
+                    config = MODULOS_CONFIG[codigo]
+                    modulos_data.append({"codigo": codigo, "label": config["label"], "icon": config["icon"]})
 
         self._dashboard = DashboardView(modulos_data)
         self._dashboard.modulo_selected.connect(self._abrir_modulo)

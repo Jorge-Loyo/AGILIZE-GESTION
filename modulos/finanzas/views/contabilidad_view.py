@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QDate
 import qtawesome as qta
 from services.finanzas.finanzas_service import finanzas_service
+from services.core.auth_service import auth_service
 
 
 class ContabilidadView(QWidget):
@@ -23,9 +24,16 @@ class ContabilidadView(QWidget):
         title.setObjectName("title")
         layout.addWidget(title)
 
+        es_admin = auth_service.current_user and auth_service.current_user.rol_id == 1
         tabs = QTabWidget()
-        tabs.addTab(self._build_plan_cuentas(), "Plan de Cuentas")
-        tabs.addTab(self._build_asientos(), "Asientos")
+
+        TABS = [
+            ("finanzas.contabilidad.plan", "Plan de Cuentas", self._build_plan_cuentas),
+            ("finanzas.contabilidad.asientos", "Asientos", self._build_asientos),
+        ]
+        for codigo, label, builder in TABS:
+            if es_admin or auth_service.tiene_permiso(codigo, "ver"):
+                tabs.addTab(builder(), label)
         layout.addWidget(tabs)
 
     def _build_plan_cuentas(self) -> QWidget:
